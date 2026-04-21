@@ -10,7 +10,8 @@ const index = () => {
       <Image source={Bootzie} style={{ width: 200, height: 200 }} />
     </View>
       <Text style={styles.title}>Workout App {"\n\n"}</Text>
-        
+        <LinkButton href="/AiOutput">Ai Output page</LinkButton>
+        /*remove this button later when the choices page is done*/
     </View>
   )
 }
