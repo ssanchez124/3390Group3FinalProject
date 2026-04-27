@@ -1,21 +1,14 @@
-import { StyleSheet, Text, View, Image } from 'react-native'
-import React from 'react'
-import LinkButton from './LinkButton'
-import Bootzie from '../assets/BootSmug.png'
+import { View, ActivityIndicator, StyleSheet } from 'react-native'
 
-const index = () => {
+// This screen briefly shows while the auth guard in _layout.jsx
+// determines whether to redirect to /(auth)/login or /(tabs)/home.
+export default function Index() {
   return (
     <View style={styles.container}>
-    <View style={styles.imageRow}>
-      <Image source={Bootzie} style={{ width: 200, height: 200 }} />
-    </View>
-      <Text style={styles.title}>Workout App {"\n\n"}</Text>
-        
+      <ActivityIndicator size="large" color="#4CAF50" />
     </View>
   )
 }
-
-export default index
 
 const styles = StyleSheet.create({
   container: {
@@ -24,15 +17,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-  },
-  imageRow: {
-    flexDirection: 'row',      //  puts them side by side
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 20,                   // spacing between the images
-    marginBottom: 20,
-  }
 })
