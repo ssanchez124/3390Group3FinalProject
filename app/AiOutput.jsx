@@ -2,6 +2,14 @@ import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native'
 import React, { useState } from 'react'
 import LinkButton from './LinkButton'
 
+// here is the funtion call for the ai output: 
+export async function generateWorkout(workoutConfig, swapExercise = null) {
+  const { data, error } = await supabase.functions.invoke('generate-workout', {
+    body: { workoutConfig, swapExercise }
+  })
+  if (error) throw error
+  return data
+}
 
 
 const index = () => {
@@ -50,6 +58,7 @@ const index = () => {
       }
     ]
   };
+
 
   const assignResponses = (response) => {
     return response.exercises.map(exercise => {
