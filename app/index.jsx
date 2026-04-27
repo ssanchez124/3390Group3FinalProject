@@ -10,7 +10,6 @@ const index = () => {
       <Image source={Bootzie} style={{ width: 200, height: 200 }} />
     </View>
       <Text style={styles.title}>Workout App {"\n\n"}</Text>
-        
     </View>
   )
 }
