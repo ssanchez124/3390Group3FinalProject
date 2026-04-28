@@ -111,7 +111,6 @@ ${schema}`
 
   if (swapExercise) {
     const userPrompt = `Replace the exercise "${swapExercise.name}" (targets: ${swapExercise.muscleGroup}).
-User has: ${profile.equipment?.join(", ") || "no equipment"}.
 Do NOT suggest any of these: ${swapExercise.excludeNames.join(", ")}.
 Respond with ONLY a single exercise JSON object matching the schema above, keeping the same "id": "${swapExercise.id}".`
     return { systemPrompt, userPrompt }
@@ -120,10 +119,6 @@ Respond with ONLY a single exercise JSON object matching the schema above, keepi
   const userPrompt = `Create a workout plan for:
 - Age: ${profile.age}, Gender: ${profile.gender}
 - Weight: ${profile.weight_kg}kg, Height: ${profile.height_cm}cm
-- Fitness level: ${profile.fitness_level}
-- Goal: ${profile.primary_goal}
-- Equipment: ${profile.equipment?.join(", ") || "none"}
-- Injuries/limitations: ${profile.injuries || "none"}
 
 Workout config:
 - Target muscles: ${config.muscleGroups.join(", ")}
