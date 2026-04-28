@@ -3,8 +3,9 @@ import {
   View, Text, FlatList, TouchableOpacity,
   StyleSheet, Alert, ActivityIndicator, SafeAreaView,
 } from 'react-native'
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useRouter } from 'expo-router'
 import { supabase } from '../lib/supabase'
+import { getWorkoutPlan } from '../lib/workoutStore'
 
 function ExerciseCard({ exercise, onSwap, swapping }) {
   return (
@@ -49,9 +50,8 @@ function Stat({ label, value }) {
 }
 
 export default function WorkoutDisplay() {
-  const { plan: planStr } = useLocalSearchParams()
   const router = useRouter()
-  const [plan, setPlan] = useState(() => JSON.parse(planStr))
+  const [plan, setPlan] = useState(() => getWorkoutPlan())
   const [swappingId, setSwappingId] = useState(null)
 
   const handleSwap = async (exercise) => {

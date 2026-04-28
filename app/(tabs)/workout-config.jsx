@@ -5,6 +5,7 @@ import {
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { supabase } from '../../lib/supabase'
+import { setWorkoutPlan } from '../../lib/workoutStore'
 
 const MUSCLE_GROUPS = ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Full Body']
 const DURATIONS = [15, 30, 45, 60]
@@ -75,10 +76,8 @@ export default function WorkoutConfig() {
       if (error) throw new Error(error.message)
       if (data?.error) throw new Error(data.error)
 
-      router.push({
-        pathname: '/workout-display',
-        params: { plan: JSON.stringify(data) },
-      })
+      setWorkoutPlan(data)
+      router.push('/workout-display')
     } catch (err) {
       Alert.alert('Generation Failed', err.message)
     } finally {

@@ -42,14 +42,16 @@ function AuthGate({ children }) {
     const inAuthGroup = segments[0] === '(auth)'
     const inOnboarding = segments[0] === '(onboarding)'
 
-    const inTabs = segments[0] === '(tabs)'
+    const onLoadingScreen = segments.length === 0
 
     if (!session) {
       if (!inAuthGroup) router.replace('/(auth)/login')
     } else if (!hasProfile) {
       if (!inOnboarding) router.replace('/(onboarding)/profile-setup')
     } else {
-      if (!inTabs) router.replace('/(tabs)/home')
+      // Only redirect from the initial loading screen or auth/onboarding —
+      // leave all other authenticated screens (e.g. /workout-display) alone
+      if (inAuthGroup || inOnboarding || onLoadingScreen) router.replace('/(tabs)/home')
     }
   }, [session, hasProfile, segments])
 
