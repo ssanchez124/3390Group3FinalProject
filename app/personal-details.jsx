@@ -1,37 +1,53 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, SafeAreaView, Alert } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalSearchParams, router } from 'expo-router';
+import { supabase } from '../lib/supabase'
 
 export default function PersonalDetailsScreen() {
-    const { email, password } = useLocalSearchParams();
+    const { email } = useLocalSearchParams();
     const [name, setName] = useState('');
     const [age, setAge] = useState('');
     const [weight, setWeight] = useState('');
     const [height, setHeight] = useState('');
     const [gender, setGender] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const handleFinishSignup = () => {
-        if(!name || !age || !weight || !height || !gender ) {
+    const handleFinishSignup = async () => {
+        if(!name.trim() || !age.trim()  || !weight.trim()  || !height.trim()  || !gender.trim()  ) {
             Alert.alert('Error', 'Please fill in all fields');
             return;
         } 
-        const newUserData = { email, password, name, age, weight, height, gender };
-        console.log('New user data:', newUserData);
+        setLoading(true);
+        try {
+        const {error} = await supabase.auth.updateUser({ data: {name: name.trim(), age: age.trim(), weight: weight.trim(), height: height.trim(), gender: gender.trim(), onboarding_complete: true, },});
+        if(error) {
+            Alert.alert('Error', error.message);
+            return;
+        }
         Alert.alert('Success', 'Profile completed successfully');
+        router.replace('/(tabs)/home');
+        } catch(err) {
+            console.error('Profile completion error:', err);
+            Alert.alert('Error', 'Something went wrong while saving your profile.');
+        } finally {
+            setLoading(false);
+        }
     };
     
     return (
         <SafeAreaView style={styles.safeArea}>
-            <ScrollView contentContainerStyle={styles.container}>
+            <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
                 <Text style={styles.title}>Complete Your Profile</Text>
                 <Text style={styles.subtitle}>Tell us about yourself we can personalize your workouts.</Text>
-                <TextInput style={styles.input} placeholder="Name" value={name} onChangeText={setName} />
-                <TextInput style={styles.input} placeholder="Age" keyboardType="numeric" value={age} onChangeText={setAge} />
-                <TextInput style={styles.input} placeholder="Weight (kg)" keyboardType="numeric" value={weight} onChangeText={setWeight} />
-                <TextInput style={styles.input} placeholder="Height (cm)" keyboardType="numeric" value={height} onChangeText={setHeight} />
-                <TextInput style={styles.input} placeholder="Gender" value={gender} onChangeText={setGender} />
-                <TouchableOpacity style={styles.button} onPress={handleFinishSignup}>
-                    <Text style={styles.buttonText}>Finish Sign Up</Text>
+                 {!!email && (<Text style={styles.emailText}>Signing up as: {email}</Text>)}
+                <TextInput style={styles.input} placeholder="Name" value={name} placeholderTextColor="#94A3B8" onChangeText={setName} editable={!loading} />
+                <TextInput style={styles.input} placeholder="Age" keyboardType="numeric" value={age} placeholderTextColor="#94A3B8" onChangeText={setAge} editable={!loading} />
+                <TextInput style={styles.input} placeholder="Weight (kg)" keyboardType="numeric" value={weight} placeholderTextColor="#94A3B8" onChangeText={setWeight} editable={!loading} />
+                <TextInput style={styles.input} placeholder="Height (cm)" keyboardType="numeric" value={height} placeholderTextColor="#94A3B8" onChangeText={setHeight} editable={!loading} />
+                <TextInput style={styles.input} placeholder="Gender" value={gender} onChangeText={setGender} editable={!loading} />
+                <TouchableOpacity style={[styles.button, loading && styles.disabledButton]} onPress={handleFinishSignup} disabled={loading}>
+                    {loading ? ( <ActivityIndicator color="#fff" /> ) : ( <Text style={styles.buttonText}>Finish Sign Up</Text>)}
                 </TouchableOpacity>
             </ScrollView>
         </SafeAreaView>
@@ -79,5 +95,8 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: '700',
+    },
+    disabledButton: {
+        opacity: 0.7,
     },
 });
