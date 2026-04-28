@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import { supabase } from '../lib/supabase'
 
@@ -8,16 +8,19 @@ function AuthGate({ children }) {
   const [session, setSession] = useState(undefined)
   const [hasProfile, setHasProfile] = useState(undefined)
 
-  // Check profile whenever session changes
-  const checkProfile = async (sess) => {
+  const checkProfile = useCallback(async (sess) => {
     if (!sess) { setHasProfile(false); return }
-    const { data } = await supabase
-      .from('user_profiles')
-      .select('user_id')
-      .eq('user_id', sess.user.id)
-      .single()
-    setHasProfile(!!data)
-  }
+    try {
+      const { data } = await supabase
+        .from('user_profiles')
+        .select('user_id')
+        .eq('user_id', sess.user.id)
+        .single()
+      setHasProfile(!!data)
+    } catch {
+      setHasProfile(false)
+    }
+  }, [])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -31,7 +34,7 @@ function AuthGate({ children }) {
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [checkProfile])
 
   useEffect(() => {
     if (session === undefined || hasProfile === undefined) return
@@ -39,12 +42,14 @@ function AuthGate({ children }) {
     const inAuthGroup = segments[0] === '(auth)'
     const inOnboarding = segments[0] === '(onboarding)'
 
+    const inTabs = segments[0] === '(tabs)'
+
     if (!session) {
       if (!inAuthGroup) router.replace('/(auth)/login')
     } else if (!hasProfile) {
       if (!inOnboarding) router.replace('/(onboarding)/profile-setup')
     } else {
-      if (inAuthGroup || inOnboarding) router.replace('/(tabs)/home')
+      if (!inTabs) router.replace('/(tabs)/home')
     }
   }, [session, hasProfile, segments])
 

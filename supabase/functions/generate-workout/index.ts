@@ -1,12 +1,12 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { serve } from "std/http/server"
+import { createClient } from "@supabase/supabase-js"
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders })
 
   try {
@@ -15,13 +15,11 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "No authorization header" }), { status: 401 })
     }
 
-    // Use service role key to create admin client, then verify token separately
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     )
 
-    // Use anon client with the user's token to get their identity
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
@@ -33,7 +31,6 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Unauthorized", details: authError }), { status: 401 })
     }
 
-    // Fetch profile using admin client (bypasses RLS issues during testing)
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("user_profiles")
       .select("*")
@@ -84,11 +81,33 @@ serve(async (req) => {
     })
 
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 })
+    const message = err instanceof Error ? err.message : String(err)
+    return new Response(JSON.stringify({ error: message }), { status: 500 })
   }
 })
 
-function buildPrompt(profile: any, config: any, swapExercise: any) {
+interface Profile {
+  age: number
+  gender: string
+  weight_kg: number
+  height_cm: number
+}
+
+interface WorkoutConfig {
+  muscleGroups: string[]
+  numExercises: number
+  durationMinutes: number
+  difficulty: string
+}
+
+interface SwapExercise {
+  id: string
+  name: string
+  muscleGroup: string
+  excludeNames: string[]
+}
+
+function buildPrompt(profile: Profile, config: WorkoutConfig, swapExercise: SwapExercise | null) {
   const schema = `{
     "planTitle": string,
     "totalDuration": number,

@@ -3,6 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native'
+import { useRouter } from 'expo-router'
 import { supabase } from '../../lib/supabase'
 
 const GENDERS = ['Male', 'Female', 'Non-binary', 'Prefer not to say']
@@ -24,6 +25,7 @@ function ChipRow({ options, selected, onSelect }) {
 }
 
 export default function ProfileSetup() {
+  const router = useRouter()
   const [age, setAge] = useState('')
   const [gender, setGender] = useState('')
   const [weightKg, setWeightKg] = useState('')
@@ -45,8 +47,11 @@ export default function ProfileSetup() {
       height_cm: parseFloat(heightCm),
     })
     setLoading(false)
-    if (error) Alert.alert('Error', error.message)
-    // _layout.jsx detects profile now exists and redirects to /(tabs)/home
+    if (error) {
+      Alert.alert('Error', error.message)
+    } else {
+      router.replace('/(tabs)/home')
+    }
   }
 
   return (
