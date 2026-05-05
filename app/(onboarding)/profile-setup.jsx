@@ -8,6 +8,24 @@ import { supabase } from '../../lib/supabase'
 
 const GENDERS = ['Male', 'Female', 'Non-binary', 'Prefer not to say']
 
+function GlassCard({ children }) {
+  return (
+    <View style={styles.card}>
+      <View style={styles.cardSheen} />
+      {children}
+    </View>
+  )
+}
+
+function SectionLabel({ children }) {
+  return (
+    <View style={styles.labelRow}>
+      <View style={styles.labelAccent} />
+      <Text style={styles.label}>{children}</Text>
+    </View>
+  )
+}
+
 function ChipRow({ options, selected, onSelect }) {
   return (
     <View style={styles.chipRow}>
@@ -56,132 +74,224 @@ export default function ProfileSetup() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: '#ADD8E6' }}
+      style={styles.wrapper}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Set Up Your Profile</Text>
-        <Text style={styles.subtitle}>This helps us personalize your workouts</Text>
 
-        <Text style={styles.label}>Age</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g. 22"
-          placeholderTextColor="#888"
-          value={age}
-          onChangeText={setAge}
-          keyboardType="numeric"
-        />
+        <View style={styles.header}>
+          <View style={styles.badgeRow}>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>ONBOARDING</Text>
+            </View>
+          </View>
+          <Text style={styles.title}>Set Up Your{'\n'}Profile</Text>
+          <Text style={styles.subtitle}>This helps us personalize your workouts.</Text>
+        </View>
 
-        <Text style={styles.label}>Gender</Text>
-        <ChipRow options={GENDERS} selected={gender} onSelect={setGender} />
+        <GlassCard>
+          <SectionLabel>Age</SectionLabel>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. 22"
+            placeholderTextColor="rgba(165, 56, 96, 0.65)"
+            value={age}
+            onChangeText={setAge}
+            keyboardType="numeric"
+          />
+        </GlassCard>
 
-        <Text style={styles.label}>Weight (kg)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g. 70"
-          placeholderTextColor="#888"
-          value={weightKg}
-          onChangeText={setWeightKg}
-          keyboardType="decimal-pad"
-        />
+        <GlassCard>
+          <SectionLabel>Gender</SectionLabel>
+          <ChipRow options={GENDERS} selected={gender} onSelect={setGender} />
+        </GlassCard>
 
-        <Text style={styles.label}>Height (cm)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g. 175"
-          placeholderTextColor="#888"
-          value={heightCm}
-          onChangeText={setHeightCm}
-          keyboardType="decimal-pad"
-        />
+        <GlassCard>
+          <SectionLabel>Weight (kg)</SectionLabel>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. 70"
+            placeholderTextColor="rgba(165, 56, 96, 0.65)"
+            value={weightKg}
+            onChangeText={setWeightKg}
+            keyboardType="decimal-pad"
+          />
+        </GlassCard>
 
-        <TouchableOpacity style={styles.button} onPress={handleSave} disabled={loading}>
+        <GlassCard>
+          <SectionLabel>Height (cm)</SectionLabel>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. 175"
+            placeholderTextColor="rgba(165, 56, 96, 0.65)"
+            value={heightCm}
+            onChangeText={setHeightCm}
+            keyboardType="decimal-pad"
+          />
+        </GlassCard>
+
+        <TouchableOpacity
+          style={[styles.button, loading && styles.buttonDisabled]}
+          onPress={handleSave}
+          disabled={loading}
+        >
           {loading
-            ? <ActivityIndicator color="#fff" />
+            ? <ActivityIndicator color="#EF88AD" />
             : <Text style={styles.buttonText}>Save & Continue</Text>
           }
         </TouchableOpacity>
+
       </ScrollView>
     </KeyboardAvoidingView>
   )
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    flex: 1,
+    backgroundColor: '#080005',
+  },
   container: {
-    paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 40,
+    paddingHorizontal: 20,
+    paddingTop: 64,
+    paddingBottom: 48,
+  },
+  header: {
+    marginBottom: 28,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    marginBottom: 14,
+  },
+  badge: {
+    backgroundColor: 'rgba(239, 136, 173, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 136, 173, 0.28)',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#EF88AD',
+    letterSpacing: 3,
   },
   title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#1a1a2e',
-    marginBottom: 6,
+    fontSize: 38,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    lineHeight: 44,
+    marginBottom: 10,
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 14,
-    color: '#555',
-    marginBottom: 28,
+    color: 'rgba(165, 56, 96, 0.85)',
+    lineHeight: 20,
+  },
+  card: {
+    backgroundColor: 'rgba(58, 5, 25, 0.55)',
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(165, 56, 96, 0.3)',
+    overflow: 'hidden',
+  },
+  cardSheen: {
+    position: 'absolute',
+    top: 0,
+    left: 16,
+    right: 16,
+    height: 1,
+    backgroundColor: 'rgba(239, 136, 173, 0.28)',
+    borderRadius: 1,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  labelAccent: {
+    width: 3,
+    height: 14,
+    borderRadius: 2,
+    backgroundColor: '#EF88AD',
+    marginRight: 10,
   },
   label: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#1a1a2e',
-    marginBottom: 8,
-    marginTop: 20,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
   },
   input: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
+    backgroundColor: 'rgba(8, 0, 5, 0.55)',
+    color: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: 'rgba(165, 56, 96, 0.45)',
+    borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 1 },
   },
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    marginTop: 4,
+    justifyContent: 'center',
   },
   chip: {
-    borderWidth: 1.5,
-    borderColor: '#4CAF50',
-    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(165, 56, 96, 0.4)',
+    borderRadius: 10,
     paddingHorizontal: 14,
-    paddingVertical: 7,
-    backgroundColor: '#fff',
+    paddingVertical: 8,
+    backgroundColor: 'rgba(8, 0, 5, 0.45)',
   },
   chipActive: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: 'rgba(239, 136, 173, 0.12)',
+    borderColor: '#EF88AD',
+    shadowColor: '#EF88AD',
+    shadowOpacity: 0.55,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 6,
   },
   chipText: {
     fontSize: 13,
-    color: '#4CAF50',
+    color: 'rgba(165, 56, 96, 0.8)',
     fontWeight: '600',
   },
   chipTextActive: {
-    color: '#fff',
+    color: '#EF88AD',
+    fontWeight: '700',
   },
   button: {
-    marginTop: 40,
-    backgroundColor: '#4CAF50',
-    borderRadius: 12,
-    paddingVertical: 15,
+    marginTop: 24,
+    backgroundColor: 'rgba(239, 136, 173, 0.1)',
+    borderRadius: 16,
+    paddingVertical: 18,
     alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#4CAF50',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 136, 173, 0.55)',
+    shadowColor: '#EF88AD',
     shadowOpacity: 0.3,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 6,
+  },
+  buttonDisabled: {
+    backgroundColor: 'rgba(103, 13, 47, 0.15)',
+    shadowOpacity: 0,
+    borderColor: 'rgba(165, 56, 96, 0.25)',
   },
   buttonText: {
-    color: '#fff',
+    color: '#EF88AD',
     fontSize: 16,
     fontWeight: '700',
+    letterSpacing: 1,
   },
 })
