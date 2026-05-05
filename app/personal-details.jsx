@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, Modal, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '../lib/supabase'
@@ -12,6 +12,8 @@ export default function PersonalDetailsScreen() {
     const [height, setHeight] = useState('');
     const [gender, setGender] = useState('');
     const [loading, setLoading] = useState(false);
+    const [genderDropdownOpen, setGenderDropdownOpen] = useState(false);
+     const genderOptions = ['Female', 'Male', 'Non-binary','Kitten', 'Discord Mod', 'Prefer not to say'];
 
     const handleFinishSignup = async () => {
         if(!name.trim() || !age.trim()  || !weight.trim()  || !height.trim()  || !gender.trim()  ) {
@@ -50,7 +52,17 @@ export default function PersonalDetailsScreen() {
                 <Text style={styles.label}>Height (cm)</Text>
                 <TextInput style={styles.input} placeholder="Height (cm)" keyboardType="numeric" value={height} placeholderTextColor="#94A3B8" onChangeText={setHeight} editable={!loading} />
                 <Text style={styles.label}>Gender</Text>
-                <TextInput style={styles.input} placeholder="Gender" value={gender} placeholderTextColor="#94A3B8" onChangeText={setGender} editable={!loading} />
+                    <TouchableOpacity style={styles.input} onPress={() => setGenderDropdownOpen(true)}>
+                    <Text style={{ color: gender ? '#fff' : '#94A3B8', fontSize: 16 }}>{gender || 'Select gender'}</Text>
+                    </TouchableOpacity>
+                    <Modal visible={genderDropdownOpen} transparent animationType="fade" onRequestClose={() => setGenderDropdownOpen(false)}>
+                    <Pressable style={styles.modalOverlay} onPress={() => setGenderDropdownOpen(false)}>
+                        <View style={styles.dropdown}>{genderOptions.map((option) => (
+                            <TouchableOpacity key={option} style={styles.dropdownOption} onPress={() => { setGender(option); setGenderDropdownOpen(false);}}>
+                            <Text style={styles.dropdownOptionText}>{option}</Text></TouchableOpacity>))}
+                        </View>
+                    </Pressable>
+                    </Modal>
                 <TouchableOpacity style={[styles.button, loading && styles.disabledButton]} onPress={handleFinishSignup} disabled={loading}>
                     {loading ? ( <ActivityIndicator color="#fff" /> ) : ( <Text style={styles.buttonText}>Finish Sign Up</Text>)}
                 </TouchableOpacity>
@@ -108,5 +120,24 @@ const styles = StyleSheet.create({
     color: '#CBD5E1',
     marginBottom: 6,
     fontWeight: '600',
-  },
+    },
+    modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    },
+    dropdown: {
+    backgroundColor: '#1e293b',
+    borderRadius: 12,
+    paddingVertical: 8,
+    },
+    dropdownOption: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    },
+    dropdownOptionText: {
+    color: '#fff',
+    fontSize: 16,
+    },
 });
