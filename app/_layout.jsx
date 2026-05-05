@@ -40,18 +40,19 @@ function AuthGate({ children }) {
     if (session === undefined || hasProfile === undefined) return
 
     const inAuthGroup = segments[0] === '(auth)'
-    const inOnboarding = segments[0] === '(onboarding)'
+      const onPersonalDetails = segments[0] === 'personal-details'
+      const onboardingComplete = session?.user?.user_metadata?.onboarding_complete === true
 
-    const onLoadingScreen = segments.length === 0
-
-    if (!session) {
-      if (!inAuthGroup) router.replace('/(auth)/login')
-    } else if (!hasProfile) {
-      if (!inOnboarding) router.replace('/(onboarding)/profile-setup')
-    } else {
-      // Only redirect from the initial loading screen or auth/onboarding —
-      // leave all other authenticated screens (e.g. /workout-display) alone
-      if (inAuthGroup || inOnboarding || onLoadingScreen) router.replace('/(tabs)/home')
+    if (!session && !inAuthGroup) {
+      router.replace('/(auth)')
+      return
+    } 
+    if (session && !onboardingComplete && !onPersonalDetails) {
+      router.replace('/personal-details')
+      return
+    }
+    if (session && onboardingComplete && inAuthGroup) {
+      router.replace('/(tabs)/home')
     }
   }, [session, hasProfile, segments])
 
