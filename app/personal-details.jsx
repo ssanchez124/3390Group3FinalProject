@@ -41,10 +41,15 @@ export default function PersonalDetailsScreen() {
                 <Text style={styles.title}>Complete Your Profile</Text>
                 <Text style={styles.subtitle}>Tell us about yourself we can personalize your workouts.</Text>
                  {!!email && (<Text style={styles.emailText}>Signing up as: {email}</Text>)}
+                <Text style={styles.label}>Name</Text>
                 <TextInput style={styles.input} placeholder="Name" value={name} placeholderTextColor="#94A3B8" onChangeText={setName} editable={!loading} />
+                <Text style={styles.label}>Age</Text>
                 <TextInput style={styles.input} placeholder="Age" keyboardType="numeric" value={age} placeholderTextColor="#94A3B8" onChangeText={setAge} editable={!loading} />
+                <Text style={styles.label}>Weight(kg)</Text>
                 <TextInput style={styles.input} placeholder="Weight (kg)" keyboardType="numeric" value={weight} placeholderTextColor="#94A3B8" onChangeText={setWeight} editable={!loading} />
+                <Text style={styles.label}>Height (cm)</Text>
                 <TextInput style={styles.input} placeholder="Height (cm)" keyboardType="numeric" value={height} placeholderTextColor="#94A3B8" onChangeText={setHeight} editable={!loading} />
+                <Text style={styles.label}>Gender</Text>
                 <TextInput style={styles.input} placeholder="Gender" value={gender} placeholderTextColor="#94A3B8" onChangeText={setGender} editable={!loading} />
                 <TouchableOpacity style={[styles.button, loading && styles.disabledButton]} onPress={handleFinishSignup} disabled={loading}>
                     {loading ? ( <ActivityIndicator color="#fff" /> ) : ( <Text style={styles.buttonText}>Finish Sign Up</Text>)}
@@ -99,4 +104,9 @@ const styles = StyleSheet.create({
     disabledButton: {
         opacity: 0.7,
     },
+    label: {
+    color: '#CBD5E1',
+    marginBottom: 6,
+    fontWeight: '600',
+  },
 });
