@@ -45,7 +45,7 @@ export default function PersonalDetailsScreen() {
                 <TextInput style={styles.input} placeholder="Age" keyboardType="numeric" value={age} placeholderTextColor="#94A3B8" onChangeText={setAge} editable={!loading} />
                 <TextInput style={styles.input} placeholder="Weight (kg)" keyboardType="numeric" value={weight} placeholderTextColor="#94A3B8" onChangeText={setWeight} editable={!loading} />
                 <TextInput style={styles.input} placeholder="Height (cm)" keyboardType="numeric" value={height} placeholderTextColor="#94A3B8" onChangeText={setHeight} editable={!loading} />
-                <TextInput style={styles.input} placeholder="Gender" value={gender} onChangeText={setGender} editable={!loading} />
+                <TextInput style={styles.input} placeholder="Gender" value={gender} placeholderTextColor="#94A3B8" onChangeText={setGender} editable={!loading} />
                 <TouchableOpacity style={[styles.button, loading && styles.disabledButton]} onPress={handleFinishSignup} disabled={loading}>
                     {loading ? ( <ActivityIndicator color="#fff" /> ) : ( <Text style={styles.buttonText}>Finish Sign Up</Text>)}
                 </TouchableOpacity>
