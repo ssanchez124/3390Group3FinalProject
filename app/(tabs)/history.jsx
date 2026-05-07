@@ -25,7 +25,10 @@ function ExerciseEntry({ log }) {
     <View style={styles.exerciseEntry}>
       <Text style={styles.exerciseName}>{log.exercise_name}</Text>
       <Text style={styles.muscleGroup}>{log.muscle_group}</Text>
-      {log.sets_data.map((s, i) => <SetRow key={i} s={s} />)}
+      {log.sets_data.length > 0
+        ? log.sets_data.map((s, i) => <SetRow key={i} s={s} />)
+        : <Text style={styles.noData}>No sets logged</Text>
+      }
     </View>
   )
 }
@@ -219,5 +222,12 @@ const styles = StyleSheet.create({
     color: '#555',
     marginBottom: 2,
     paddingLeft: 8,
+  },
+  noData: {
+    fontSize: 12,
+    color: '#aaa',
+    fontStyle: 'italic',
+    paddingLeft: 8,
+    marginTop: 2,
   },
 })
