@@ -8,38 +8,22 @@ import { useRouter } from 'expo-router'
 import { supabase } from '../lib/supabase'
 import { getWorkoutPlan } from '../lib/workoutStore'
 
-function ExerciseCard({ exercise, onSwap, swapping }) {
-  return (
-    <View style={styles.card}>
-      <View style={styles.cardSheen} />
-      <View style={styles.cardHeader}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.exerciseName}>{exercise.name}</Text>
-          <Text style={styles.muscleGroup}>{exercise.muscleGroup}</Text>
-        </View>
-        <TouchableOpacity
-          style={[styles.swapButton, swapping && styles.swapButtonDisabled]}
-          onPress={onSwap}
-          disabled={swapping}
-        >
-          {swapping
-            ? <ActivityIndicator size="small" color="#EF88AD" />
-            : <Text style={styles.swapText}>Swap</Text>
-          }
-        </TouchableOpacity>
-      </View>
+// Build one empty set row per set the AI recommended
+function initSets(count) {
+  return Array.from({ length: count }, (_, i) => ({
+    set: i + 1,
+    reps: '',
+    weight_kg: '',
+  }))
+}
 
-      <View style={styles.statsRow}>
-        <Stat label="Sets" value={exercise.sets} />
-        <Stat label="Reps" value={exercise.reps} />
-        <Stat label="Rest" value={`${exercise.restSeconds}s`} />
-        <Stat label="Level" value={exercise.difficulty} />
-      </View>
-
-      <Text style={styles.equipmentLabel}>Equipment: <Text style={styles.equipmentValue}>{exercise.equipment}</Text></Text>
-      <Text style={styles.instructions}>{exercise.instructions}</Text>
-    </View>
-  )
+// Build the initial logs object keyed by exercise id
+function initLogs(exercises) {
+  const logs = {}
+  exercises.forEach(ex => {
+    logs[ex.id] = initSets(ex.sets)
+  })
+  return logs
 }
 
 function Stat({ label, value }) {
@@ -51,15 +35,134 @@ function Stat({ label, value }) {
   )
 }
 
+function ExerciseCard({
+  exercise, isExpanded, onToggle,
+  onSwap, swapping, onRemove,
+  sets, onUpdateSet, onAddSet,
+}) {
+  return (
+    <View style={styles.card}>
+      <View style={styles.cardSheen} />
+      <View style={styles.cardHeader}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.exerciseName}>{exercise.name}</Text>
+          <Text style={styles.muscleGroup}>{exercise.muscleGroup}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.iconButton, styles.swapBtn, swapping && styles.iconButtonDisabled]}
+          onPress={onSwap}
+          disabled={swapping}
+        >
+          {swapping
+            ? <ActivityIndicator size="small" color="#EF88AD" />
+            : <Text style={styles.swapText}>Swap</Text>
+          }
+        </TouchableOpacity>
+
+        <TouchableOpacity style={[styles.iconButton, styles.removeBtn]} onPress={onRemove}>
+          <Text style={styles.removeText}>✕</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* ── Stats bar ── */}
+      <View style={styles.statsRow}>
+        <Stat label="Sets" value={exercise.sets} />
+        <Stat label="Reps" value={exercise.reps} />
+        <Stat label="Rest" value={`${exercise.restSeconds}s`} />
+        <Stat label="Level" value={exercise.difficulty} />
+      </View>
+
+      <Text style={styles.instructions}>{exercise.instructions}</Text>
+
+      {/* ── Expand/collapse toggle hint ── */}
+      <TouchableOpacity style={styles.toggleRow} onPress={onToggle}>
+        <Text style={styles.toggleText}>
+          {isExpanded ? '▲ Hide log' : '▼ Log sets'}
+        </Text>
+      </TouchableOpacity>
+
+      {/* ── Logging section (only when expanded) ── */}
+      {isExpanded && (
+        <View style={styles.logSection}>
+          <View style={styles.logHeader}>
+            <Text style={[styles.logHeaderText, { flex: 1 }]}>Set</Text>
+            <Text style={[styles.logHeaderText, { flex: 2, textAlign: 'center' }]}>Weight (kg)</Text>
+            <Text style={[styles.logHeaderText, { flex: 2, textAlign: 'center' }]}>Reps</Text>
+          </View>
+
+          {sets.map((s, i) => (
+            <View key={i} style={styles.setRow}>
+              <Text style={styles.setNum}>{s.set}</Text>
+              <TextInput
+                style={styles.setInput}
+                placeholder="0"
+                placeholderTextColor="#bbb"
+                value={s.weight_kg}
+                onChangeText={val => onUpdateSet(i, 'weight_kg', val)}
+                keyboardType="decimal-pad"
+              />
+              <TextInput
+                style={styles.setInput}
+                placeholder="0"
+                placeholderTextColor="#bbb"
+                value={s.reps}
+                onChangeText={val => onUpdateSet(i, 'reps', val)}
+                keyboardType="numeric"
+              />
+            </View>
+          ))}
+
+          <TouchableOpacity style={styles.addSetBtn} onPress={onAddSet}>
+            <Text style={styles.addSetText}>+ Add Set</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  )
+}
+
 export default function WorkoutDisplay() {
   const router = useRouter()
-  const [plan, setPlan] = useState(() => getWorkoutPlan())
+  const plan = getWorkoutPlan()
+
+  const [exercises, setExercises] = useState(plan.exercises)
+  const [expandedIds, setExpandedIds] = useState({})   // { [id]: true/false }
+  const [logs, setLogs] = useState(() => initLogs(plan.exercises))
   const [swappingId, setSwappingId] = useState(null)
+  const [saving, setSaving] = useState(false)
+
+  const toggleExpand = (id) =>
+    setExpandedIds(prev => ({ ...prev, [id]: !prev[id] }))
+
+  const removeExercise = (id) => {
+    setExercises(prev => prev.filter(e => e.id !== id))
+    setLogs(prev => { const next = { ...prev }; delete next[id]; return next })
+  }
+
+  const updateSet = (exerciseId, setIndex, field, value) => {
+    setLogs(prev => ({
+      ...prev,
+      [exerciseId]: prev[exerciseId].map((s, i) =>
+        i === setIndex ? { ...s, [field]: value } : s
+      ),
+    }))
+  }
+
+  const addSet = (exerciseId) => {
+    setLogs(prev => ({
+      ...prev,
+      [exerciseId]: [
+        ...prev[exerciseId],
+        { set: prev[exerciseId].length + 1, reps: '', weight_kg: '' },
+      ],
+    }))
+  }
 
   const handleSwap = async (exercise) => {
     setSwappingId(exercise.id)
     try {
-      const excludeNames = plan.exercises.map(e => e.name)
+      const excludeNames = exercises.map(e => e.name)
       const { data, error } = await supabase.functions.invoke('generate-workout', {
         body: {
           workoutConfig: {},
@@ -71,19 +174,59 @@ export default function WorkoutDisplay() {
           },
         },
       })
-
       if (error) throw new Error(error.message)
       if (data?.error) throw new Error(data.error)
 
-      // Replace the swapped exercise in the list
-      setPlan(prev => ({
-        ...prev,
-        exercises: prev.exercises.map(e => e.id === exercise.id ? { ...data, id: exercise.id } : e),
-      }))
+      const newExercise = { ...data, id: exercise.id }
+      setExercises(prev => prev.map(e => e.id === exercise.id ? newExercise : e))
+      // Reset the log for this exercise with the new set count
+      setLogs(prev => ({ ...prev, [exercise.id]: initSets(newExercise.sets) }))
     } catch (err) {
       Alert.alert('Swap Failed', err.message)
     } finally {
       setSwappingId(null)
+    }
+  }
+
+  const handleComplete = async () => {
+    setSaving(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+
+      // Save the session
+      const { data: session, error: sessionError } = await supabase
+        .from('workout_sessions')
+        .insert({ user_id: user.id })
+        .select()
+        .single()
+      if (sessionError) throw sessionError
+
+      // Save all remaining exercises (not removed). sets_data is [] if user
+      // didn't log any weights — exercise still appears in history either way.
+      const exerciseLogs = exercises.map(ex => ({
+        session_id: session.id,
+        user_id: user.id,
+        exercise_name: ex.name,
+        muscle_group: ex.muscleGroup,
+        sets_data: (logs[ex.id] ?? [])
+          .filter(s => s.reps !== '' || s.weight_kg !== '')
+          .map(s => ({
+            set: s.set,
+            reps: parseInt(s.reps) || 0,
+            weight_kg: parseFloat(s.weight_kg) || 0,
+          })),
+      }))
+
+      const { error: logsError } = await supabase
+        .from('exercise_logs')
+        .insert(exerciseLogs)
+      if (logsError) throw logsError
+
+      router.replace('/session-summary')
+    } catch (err) {
+      Alert.alert('Error saving workout', err.message)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -96,22 +239,42 @@ export default function WorkoutDisplay() {
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={styles.planTitle}>{plan.planTitle}</Text>
-          <Text style={styles.planMeta}>{plan.totalDuration} min · {plan.exercises?.length} exercises</Text>
+          <Text style={styles.planMeta}>
+            {plan.totalDuration} min · {exercises.length} exercises
+          </Text>
         </View>
       </View>
 
       <FlatList
-        data={plan.exercises}
-        keyExtractor={(item) => item.id}
+        data={exercises}
+        keyExtractor={item => item.id}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
           <ExerciseCard
             exercise={item}
+            isExpanded={!!expandedIds[item.id]}
+            onToggle={() => toggleExpand(item.id)}
             onSwap={() => handleSwap(item)}
             swapping={swappingId === item.id}
+            onRemove={() => removeExercise(item.id)}
+            sets={logs[item.id] ?? []}
+            onUpdateSet={(i, field, val) => updateSet(item.id, i, field, val)}
+            onAddSet={() => addSet(item.id)}
           />
         )}
+        ListFooterComponent={
+          <TouchableOpacity
+            style={[styles.completeButton, saving && styles.completeButtonDisabled]}
+            onPress={handleComplete}
+            disabled={saving}
+          >
+            {saving
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={styles.completeButtonText}>Complete Workout</Text>
+            }
+          </TouchableOpacity>
+        }
       />
     </SafeAreaView>
   )
@@ -167,6 +330,13 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     paddingBottom: 32,
   },
+  backButton: { marginRight: 12 },
+  backText: { fontSize: 15, color: '#2e7d32', fontWeight: '600' },
+  planTitle: { fontSize: 20, fontWeight: 'bold', color: '#1a1a2e' },
+  planMeta: { fontSize: 13, color: '#555', marginTop: 2 },
+  list: { paddingHorizontal: 16, paddingBottom: 40 },
+
+  // Card
   card: {
     backgroundColor: 'rgba(58, 5, 25, 0.55)',
     borderRadius: 20,
@@ -185,7 +355,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(239, 136, 173, 0.28)',
     borderRadius: 1,
   },
-  cardHeader: {
+  cardTop: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     marginBottom: 14,
@@ -196,6 +366,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     letterSpacing: -0.2,
   },
+  exerciseName: { fontSize: 16, fontWeight: '700', color: '#1a1a2e' },
   muscleGroup: {
     fontSize: 12,
     color: '#EF88AD',
@@ -208,9 +379,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(239, 136, 173, 0.55)',
     borderRadius: 20,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    minWidth: 60,
+    marginLeft: 6,
     alignItems: 'center',
     backgroundColor: 'rgba(239, 136, 173, 0.08)',
   },
@@ -253,7 +424,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: 'rgba(165, 56, 96, 0.7)',
     marginBottom: 6,
-    fontWeight: '600',
   },
   equipmentValue: {
     fontWeight: '400',
