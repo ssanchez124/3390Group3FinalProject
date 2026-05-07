@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import {
-  View, Text, TextInput, FlatList, TouchableOpacity,
-  StyleSheet, Alert, ActivityIndicator, SafeAreaView,
+  View, Text, FlatList, TouchableOpacity,
+  StyleSheet, Alert, ActivityIndicator,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { supabase } from '../lib/supabase'
 import { getWorkoutPlan } from '../lib/workoutStore'
@@ -41,9 +42,9 @@ function ExerciseCard({
 }) {
   return (
     <View style={styles.card}>
-      {/* ── Top row: name + Swap + Remove ── */}
-      <View style={styles.cardTop}>
-        <TouchableOpacity style={{ flex: 1 }} onPress={onToggle} activeOpacity={0.7}>
+      <View style={styles.cardSheen} />
+      <View style={styles.cardHeader}>
+        <View style={{ flex: 1 }}>
           <Text style={styles.exerciseName}>{exercise.name}</Text>
           <Text style={styles.muscleGroup}>{exercise.muscleGroup}</Text>
         </TouchableOpacity>
@@ -54,7 +55,7 @@ function ExerciseCard({
           disabled={swapping}
         >
           {swapping
-            ? <ActivityIndicator size="small" color="#4CAF50" />
+            ? <ActivityIndicator size="small" color="#EF88AD" />
             : <Text style={styles.swapText}>Swap</Text>
           }
         </TouchableOpacity>
@@ -232,6 +233,7 @@ export default function WorkoutDisplay() {
   return (
     <SafeAreaView style={styles.wrapper}>
       <View style={styles.header}>
+        <View style={styles.headerSheen} />
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
@@ -247,7 +249,7 @@ export default function WorkoutDisplay() {
         data={exercises}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.list}
-        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
           <ExerciseCard
             exercise={item}
@@ -279,13 +281,54 @@ export default function WorkoutDisplay() {
 }
 
 const styles = StyleSheet.create({
-  wrapper: { flex: 1, backgroundColor: '#ADD8E6' },
+  wrapper: {
+    flex: 1,
+    backgroundColor: '#080005',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 12,
+    paddingBottom: 14,
+    backgroundColor: 'rgba(58, 5, 25, 0.6)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(165, 56, 96, 0.3)',
+    overflow: 'hidden',
+  },
+  headerSheen: {
+    position: 'absolute',
+    top: 0,
+    left: 16,
+    right: 16,
+    height: 1,
+    backgroundColor: 'rgba(239, 136, 173, 0.2)',
+  },
+  backButton: {
+    marginRight: 14,
+    paddingVertical: 4,
+  },
+  backText: {
+    fontSize: 15,
+    color: '#EF88AD',
+    fontWeight: '600',
+  },
+  planTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.3,
+  },
+  planMeta: {
+    fontSize: 12,
+    color: 'rgba(165, 56, 96, 0.85)',
+    marginTop: 2,
+    letterSpacing: 0.2,
+  },
+  list: {
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 32,
   },
   backButton: { marginRight: 12 },
   backText: { fontSize: 15, color: '#2e7d32', fontWeight: '600' },
@@ -295,104 +338,101 @@ const styles = StyleSheet.create({
 
   // Card
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 14,
+    backgroundColor: 'rgba(58, 5, 25, 0.55)',
+    borderRadius: 20,
+    padding: 16,
     marginBottom: 12,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
+    borderWidth: 1,
+    borderColor: 'rgba(165, 56, 96, 0.3)',
+    overflow: 'hidden',
+  },
+  cardSheen: {
+    position: 'absolute',
+    top: 0,
+    left: 16,
+    right: 16,
+    height: 1,
+    backgroundColor: 'rgba(239, 136, 173, 0.28)',
+    borderRadius: 1,
   },
   cardTop: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 10,
+    marginBottom: 14,
+  },
+  exerciseName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: -0.2,
   },
   exerciseName: { fontSize: 16, fontWeight: '700', color: '#1a1a2e' },
   muscleGroup: {
-    fontSize: 12, color: '#4CAF50', fontWeight: '600',
-    marginTop: 2, textTransform: 'capitalize',
+    fontSize: 12,
+    color: '#EF88AD',
+    fontWeight: '600',
+    marginTop: 3,
+    textTransform: 'capitalize',
+    letterSpacing: 0.3,
   },
-
-  // Buttons
-  iconButton: {
+  swapButton: {
+    borderWidth: 1,
+    borderColor: 'rgba(239, 136, 173, 0.55)',
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 6,
     marginLeft: 6,
     alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: 'rgba(239, 136, 173, 0.08)',
   },
-  swapBtn: { borderWidth: 1.5, borderColor: '#4CAF50' },
-  swapText: { color: '#4CAF50', fontWeight: '700', fontSize: 12 },
-  iconButtonDisabled: { borderColor: '#aaa' },
-  removeBtn: { borderWidth: 1.5, borderColor: '#e57373' },
-  removeText: { color: '#e57373', fontWeight: '700', fontSize: 13 },
-
-  // Stats
+  swapButtonDisabled: {
+    borderColor: 'rgba(165, 56, 96, 0.25)',
+    backgroundColor: 'transparent',
+  },
+  swapText: {
+    color: '#EF88AD',
+    fontWeight: '700',
+    fontSize: 13,
+  },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    marginBottom: 8,
+    backgroundColor: 'rgba(8, 0, 5, 0.45)',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(165, 56, 96, 0.2)',
   },
-  stat: { alignItems: 'center' },
-  statValue: { fontSize: 14, fontWeight: '700', color: '#1a1a2e', textTransform: 'capitalize' },
-  statLabel: { fontSize: 10, color: '#888', marginTop: 1 },
-  instructions: { fontSize: 12, color: '#666', lineHeight: 18, marginBottom: 8 },
-
-  // Toggle
-  toggleRow: { alignItems: 'center', paddingVertical: 4 },
-  toggleText: { fontSize: 12, color: '#4CAF50', fontWeight: '700' },
-
-  // Log section
-  logSection: {
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    marginTop: 8,
-    paddingTop: 10,
-  },
-  logHeader: { flexDirection: 'row', marginBottom: 6, paddingHorizontal: 2 },
-  logHeaderText: { fontSize: 11, color: '#888', fontWeight: '600' },
-  setRow: {
-    flexDirection: 'row',
+  stat: {
     alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#EF88AD',
+    textTransform: 'capitalize',
+  },
+  statLabel: {
+    fontSize: 10,
+    color: 'rgba(165, 56, 96, 0.7)',
+    marginTop: 2,
+    letterSpacing: 0.5,
+  },
+  equipmentLabel: {
+    fontSize: 12,
+    color: 'rgba(165, 56, 96, 0.7)',
     marginBottom: 6,
   },
-  setNum: { flex: 1, fontSize: 13, color: '#555', fontWeight: '600' },
-  setInput: {
-    flex: 2,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    paddingVertical: 7,
-    paddingHorizontal: 8,
-    fontSize: 14,
-    textAlign: 'center',
-    marginHorizontal: 4,
-    color: '#1a1a2e',
+  equipmentValue: {
+    fontWeight: '400',
+    textTransform: 'capitalize',
+    color: 'rgba(239, 136, 173, 0.8)',
   },
-  addSetBtn: { marginTop: 4, alignSelf: 'flex-start' },
-  addSetText: { color: '#4CAF50', fontWeight: '700', fontSize: 12 },
-
-  // Complete button
-  completeButton: {
-    backgroundColor: '#4CAF50',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 32,
-    elevation: 4,
-    shadowColor: '#4CAF50',
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
+  instructions: {
+    fontSize: 13,
+    color: 'rgba(165, 56, 96, 0.75)',
+    lineHeight: 19,
   },
-  completeButtonDisabled: { backgroundColor: '#81C784' },
-  completeButtonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 })

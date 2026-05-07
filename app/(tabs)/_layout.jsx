@@ -1,16 +1,12 @@
 import { Tabs } from 'expo-router'
+import HamburgerMenu from '../../components/HamburgerMenu'
 
 export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: '#4CAF50',
-        tabBarInactiveTintColor: '#888',
-        tabBarStyle: {
-          backgroundColor: '#fff',
-          borderTopColor: '#e0e0e0',
-        },
+        header: ({ options }) => <HamburgerMenu title={options.title} />,
+        tabBarStyle: { display: 'none' },
       }}
     >
       <Tabs.Screen name="home" options={{ title: 'Home' }} />
