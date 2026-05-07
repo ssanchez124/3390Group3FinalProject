@@ -10,7 +10,7 @@ import { getWorkoutPlan } from '../lib/workoutStore'
 
 function initSets(count) {
   return Array.from({ length: count }, (_, i) => ({
-    set: i + 1, reps: '', weight_kg: '',
+    set: i + 1, reps: '', weight_kg: '', weight_type: 'custom',
   }))
 }
 
@@ -90,16 +90,43 @@ function ExerciseCard({
           {sets.map((s, i) => (
             <View key={i} style={styles.setRow}>
               <Text style={styles.setNum}>{s.set}</Text>
+
+              <View style={styles.weightCell}>
+                <View style={styles.weightToggleRow}>
+                  <TouchableOpacity
+                    style={[styles.weightToggle, s.weight_type === 'custom' && styles.weightToggleActive,]}
+                    onPress={() => onUpdateSet(i, 'weight_type', 'custom')}>
+                    <Text style={[styles.weightToggleText, s.weight_type === 'custom' && styles.weightToggleTextActive,]}>kg</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.weightToggle, s.weight_type === 'bodyweight' && styles.weightToggleActive,]}
+                    onPress={() => {
+                      onUpdateSet(i, 'weight_type', 'bodyweight')
+                      onUpdateSet(i, 'weight_kg', '')
+                    }}>
+                    <Text style={[styles.weightToggleText, s.weight_type === 'bodyweight' && styles.weightToggleTextActive,]}>Bodyweight</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {s.weight_type === 'bodyweight' ? (
+                  <View style={styles.bodyweightPill}>
+                    <Text style={styles.bodyweightText}>Bodyweight</Text>
+                  </View>
+                ) : (
+                  <TextInput
+                    style={styles.setInput}
+                    placeholder="0"
+                    placeholderTextColor="rgba(239,136,173,0.35)"
+                    value={s.weight_kg}
+                    onChangeText={val => onUpdateSet(i, 'weight_kg', val)}
+                    keyboardType="decimal-pad"
+                  />
+                )}
+              </View>
+
               <TextInput
-                style={styles.setInput}
-                placeholder="0"
-                placeholderTextColor="rgba(239,136,173,0.35)"
-                value={s.weight_kg}
-                onChangeText={val => onUpdateSet(i, 'weight_kg', val)}
-                keyboardType="decimal-pad"
-              />
-              <TextInput
-                style={styles.setInput}
+                style={styles.repsInput}
                 placeholder="0"
                 placeholderTextColor="rgba(239,136,173,0.35)"
                 value={s.reps}
@@ -150,7 +177,7 @@ export default function WorkoutDisplay() {
       ...prev,
       [exerciseId]: [
         ...prev[exerciseId],
-        { set: prev[exerciseId].length + 1, reps: '', weight_kg: '' },
+        { set: prev[exerciseId].length + 1, reps: '', weight_kg: '', weight_type: 'custom', },
       ],
     }))
   }
@@ -188,6 +215,22 @@ export default function WorkoutDisplay() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
 
+      const usesBodyweight = Object.values(logs).some(setList =>
+      setList.some(s => s.weight_type === 'bodyweight'))
+
+      let userBodyweightKg = null
+      if (usesBodyweight) {
+        const { data: profile, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('weight_kg')
+          .eq('user_id', user.id)
+          .single()
+
+        if (profileError) throw profileError
+        userBodyweightKg = profile.weight_kg
+      }
+
+
       const { data: session, error: sessionError } = await supabase
         .from('workout_sessions')
         .insert({ user_id: user.id })
@@ -201,12 +244,23 @@ export default function WorkoutDisplay() {
         exercise_name: ex.name,
         muscle_group: ex.muscleGroup,
         sets_data: (logs[ex.id] ?? [])
-          .filter(s => s.reps !== '' || s.weight_kg !== '')
-          .map(s => ({
-            set: s.set,
-            reps: parseInt(s.reps) || 0,
-            weight_kg: parseFloat(s.weight_kg) || 0,
-          })),
+          .filter(s =>
+            s.reps !== '' ||
+            s.weight_kg !== '' ||
+            s.weight_type === 'bodyweight'
+          )
+          .map(s => {
+            const isBodyweight = s.weight_type === 'bodyweight'
+
+            return {
+              set: s.set,
+              reps: parseInt(s.reps, 10) || 0,
+              weight_kg: isBodyweight
+                ? userBodyweightKg
+                : parseFloat(s.weight_kg) || 0,
+              weight_type: isBodyweight ? 'bodyweight' : 'custom',
+            }
+          }),
       }))
 
       const { error: logsError } = await supabase
@@ -359,11 +413,10 @@ const styles = StyleSheet.create({
   setRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   setNum: { flex: 1, fontSize: 13, color: '#EF88AD', fontWeight: '700' },
   setInput: {
-    flex: 2,
     backgroundColor: 'rgba(8,0,5,0.6)',
     borderWidth: 1, borderColor: 'rgba(165,56,96,0.35)',
     borderRadius: 10, paddingVertical: 8, paddingHorizontal: 10,
-    fontSize: 14, textAlign: 'center', marginHorizontal: 4, color: '#FFFFFF',
+    fontSize: 14, textAlign: 'center', color: '#FFFFFF',
   },
 
   addSetBtn: { marginTop: 4, alignSelf: 'flex-start' },
@@ -379,4 +432,60 @@ const styles = StyleSheet.create({
   },
   completeButtonDisabled: { opacity: 0.5 },
   completeButtonText: { color: '#EF88AD', fontSize: 16, fontWeight: '700', letterSpacing: 0.5 },
+  weightToggleRow: {
+    flexDirection: 'row',
+    marginBottom: 6,
+    borderRadius: 10,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(165,56,96,0.35)',
+  },
+  weightToggle: {
+    flex: 1,
+    paddingVertical: 5,
+    alignItems: 'center',
+    backgroundColor: 'rgba(8,0,5,0.6)',
+  },
+  weightToggleActive: {
+    backgroundColor: 'rgba(239,136,173,0.16)',
+  },
+  weightToggleText: {
+    fontSize: 11,
+    color: 'rgba(165,56,96,0.8)',
+    fontWeight: '700',
+  },
+  weightToggleTextActive: {
+    color: '#EF88AD',
+  },
+  bodyweightPill: {
+    backgroundColor: 'rgba(8,0,5,0.6)',
+    borderWidth: 1,
+    borderColor: 'rgba(165,56,96,0.35)',
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+  },
+  bodyweightText: {
+    fontSize: 13,
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  weightCell: {
+  flex: 2,
+  marginHorizontal: 4,
+  },
+  repsInput: {
+    flex: 2,
+    backgroundColor: 'rgba(8,0,5,0.6)',
+    borderWidth: 1,
+    borderColor: 'rgba(165,56,96,0.35)',
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    fontSize: 14,
+    textAlign: 'center',
+    marginHorizontal: 4,
+    color: '#FFFFFF',
+  },
 })
