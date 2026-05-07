@@ -4,6 +4,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '../lib/supabase'
 
+function GlassCard({ children }) {
+  return (
+    <View style={styles.card}>
+      <View style={styles.cardSheen} />
+      {children}
+    </View>
+  )
+}
+
 export default function PersonalDetailsScreen() {
     const { email } = useLocalSearchParams();
     const [name, setName] = useState('');
@@ -66,9 +75,25 @@ export default function PersonalDetailsScreen() {
                 <TouchableOpacity style={[styles.button, loading && styles.disabledButton]} onPress={handleFinishSignup} disabled={loading}>
                     {loading ? ( <ActivityIndicator color="#fff" /> ) : ( <Text style={styles.buttonText}>Finish Sign Up</Text>)}
                 </TouchableOpacity>
-            </ScrollView>
-        </SafeAreaView>
-    );
+              ))}
+            </View>
+          </Pressable>
+        </Modal>
+
+        <TouchableOpacity
+          style={[styles.button, loading && styles.buttonDisabled]}
+          onPress={handleFinishSignup}
+          disabled={loading}
+        >
+          {loading
+            ? <ActivityIndicator color="#EF88AD" />
+            : <Text style={styles.buttonText}>Finish Sign Up</Text>
+          }
+        </TouchableOpacity>
+
+      </ScrollView>
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({

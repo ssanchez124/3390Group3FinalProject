@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, Alert, ActivityIndicator, SafeAreaView,
+  StyleSheet, Alert, ActivityIndicator,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { supabase } from '../lib/supabase'
 import { getWorkoutPlan } from '../lib/workoutStore'
@@ -10,6 +11,7 @@ import { getWorkoutPlan } from '../lib/workoutStore'
 function ExerciseCard({ exercise, onSwap, swapping }) {
   return (
     <View style={styles.card}>
+      <View style={styles.cardSheen} />
       <View style={styles.cardHeader}>
         <View style={{ flex: 1 }}>
           <Text style={styles.exerciseName}>{exercise.name}</Text>
@@ -21,7 +23,7 @@ function ExerciseCard({ exercise, onSwap, swapping }) {
           disabled={swapping}
         >
           {swapping
-            ? <ActivityIndicator size="small" color="#4CAF50" />
+            ? <ActivityIndicator size="small" color="#EF88AD" />
             : <Text style={styles.swapText}>Swap</Text>
           }
         </TouchableOpacity>
@@ -88,6 +90,7 @@ export default function WorkoutDisplay() {
   return (
     <SafeAreaView style={styles.wrapper}>
       <View style={styles.header}>
+        <View style={styles.headerSheen} />
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
@@ -101,6 +104,7 @@ export default function WorkoutDisplay() {
         data={plan.exercises}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
           <ExerciseCard
             exercise={item}
@@ -116,120 +120,149 @@ export default function WorkoutDisplay() {
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
-    backgroundColor: '#ADD8E6',
+    backgroundColor: '#080005',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 12,
-    backgroundColor: '#ADD8E6',
+    paddingBottom: 14,
+    backgroundColor: 'rgba(58, 5, 25, 0.6)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(165, 56, 96, 0.3)',
+    overflow: 'hidden',
+  },
+  headerSheen: {
+    position: 'absolute',
+    top: 0,
+    left: 16,
+    right: 16,
+    height: 1,
+    backgroundColor: 'rgba(239, 136, 173, 0.2)',
   },
   backButton: {
-    marginRight: 12,
+    marginRight: 14,
     paddingVertical: 4,
   },
   backText: {
     fontSize: 15,
-    color: '#2e7d32',
+    color: '#EF88AD',
     fontWeight: '600',
   },
   planTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1a1a2e',
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.3,
   },
   planMeta: {
-    fontSize: 13,
-    color: '#555',
+    fontSize: 12,
+    color: 'rgba(165, 56, 96, 0.85)',
     marginTop: 2,
+    letterSpacing: 0.2,
   },
   list: {
     paddingHorizontal: 16,
+    paddingTop: 14,
     paddingBottom: 32,
   },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
+    backgroundColor: 'rgba(58, 5, 25, 0.55)',
+    borderRadius: 20,
     padding: 16,
     marginBottom: 12,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
+    borderWidth: 1,
+    borderColor: 'rgba(165, 56, 96, 0.3)',
+    overflow: 'hidden',
+  },
+  cardSheen: {
+    position: 'absolute',
+    top: 0,
+    left: 16,
+    right: 16,
+    height: 1,
+    backgroundColor: 'rgba(239, 136, 173, 0.28)',
+    borderRadius: 1,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 14,
   },
   exerciseName: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
-    color: '#1a1a2e',
+    color: '#FFFFFF',
+    letterSpacing: -0.2,
   },
   muscleGroup: {
-    fontSize: 13,
-    color: '#4CAF50',
+    fontSize: 12,
+    color: '#EF88AD',
     fontWeight: '600',
-    marginTop: 2,
+    marginTop: 3,
     textTransform: 'capitalize',
+    letterSpacing: 0.3,
   },
   swapButton: {
-    borderWidth: 1.5,
-    borderColor: '#4CAF50',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 136, 173, 0.55)',
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 6,
     minWidth: 60,
     alignItems: 'center',
+    backgroundColor: 'rgba(239, 136, 173, 0.08)',
   },
   swapButtonDisabled: {
-    borderColor: '#aaa',
+    borderColor: 'rgba(165, 56, 96, 0.25)',
+    backgroundColor: 'transparent',
   },
   swapText: {
-    color: '#4CAF50',
+    color: '#EF88AD',
     fontWeight: '700',
     fontSize: 13,
   },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 10,
+    backgroundColor: 'rgba(8, 0, 5, 0.45)',
+    borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 12,
-    marginBottom: 10,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(165, 56, 96, 0.2)',
   },
   stat: {
     alignItems: 'center',
   },
   statValue: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
-    color: '#1a1a2e',
+    color: '#EF88AD',
     textTransform: 'capitalize',
   },
   statLabel: {
-    fontSize: 11,
-    color: '#888',
+    fontSize: 10,
+    color: 'rgba(165, 56, 96, 0.7)',
     marginTop: 2,
+    letterSpacing: 0.5,
   },
   equipmentLabel: {
-    fontSize: 13,
-    color: '#555',
+    fontSize: 12,
+    color: 'rgba(165, 56, 96, 0.7)',
     marginBottom: 6,
     fontWeight: '600',
   },
   equipmentValue: {
     fontWeight: '400',
     textTransform: 'capitalize',
+    color: 'rgba(239, 136, 173, 0.8)',
   },
   instructions: {
     fontSize: 13,
-    color: '#444',
+    color: 'rgba(165, 56, 96, 0.75)',
     lineHeight: 19,
   },
 })
