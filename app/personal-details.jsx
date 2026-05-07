@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, Modal, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '../lib/supabase'
@@ -21,6 +21,8 @@ export default function PersonalDetailsScreen() {
   const [height, setHeight] = useState('');
   const [gender, setGender] = useState('');
   const [loading, setLoading] = useState(false);
+  const [genderDropdownOpen, setGenderDropdownOpen] = useState(false);
+  const genderOptions = ['Female', 'Male', 'Non-binary', 'Kitten', 'Discord Mod', 'Prefer not to say'];
 
   const handleFinishSignup = async () => {
     if(!name.trim() || !age.trim()  || !weight.trim()  || !height.trim()  || !gender.trim()  ) {
@@ -95,15 +97,40 @@ export default function PersonalDetailsScreen() {
             onChangeText={setHeight}
             editable={!loading}
           />
-          <TextInput
-            style={[styles.input, styles.inputLast]}
-            placeholder="Gender"
-            value={gender}
-            placeholderTextColor="rgba(165, 56, 96, 0.65)"
-            onChangeText={setGender}
-            editable={!loading}
-          />
+          <TouchableOpacity
+            style={[styles.input, styles.inputLast, styles.dropdownTrigger]}
+            onPress={() => setGenderDropdownOpen(true)}
+            activeOpacity={0.8}
+          >
+            <Text style={gender ? styles.dropdownValue : styles.dropdownPlaceholder}>
+              {gender || 'Gender'}
+            </Text>
+            <Text style={styles.dropdownArrow}>▼</Text>
+          </TouchableOpacity>
         </GlassCard>
+
+        <Modal visible={genderDropdownOpen} transparent animationType="fade" onRequestClose={() => setGenderDropdownOpen(false)}>
+          <Pressable style={styles.modalOverlay} onPress={() => setGenderDropdownOpen(false)}>
+            <View style={styles.dropdown}>
+              {genderOptions.map((option, index) => (
+                <TouchableOpacity
+                  key={option}
+                  style={[
+                    styles.dropdownOption,
+                    index < genderOptions.length - 1 && styles.dropdownOptionBorder,
+                    gender === option && styles.dropdownOptionActive,
+                  ]}
+                  onPress={() => { setGender(option); setGenderDropdownOpen(false); }}
+                >
+                  <Text style={[styles.dropdownOptionText, gender === option && styles.dropdownOptionTextActive]}>
+                    {option}
+                  </Text>
+                  {gender === option && <Text style={styles.dropdownCheck}>✓</Text>}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </Pressable>
+        </Modal>
 
         <TouchableOpacity
           style={[styles.button, loading && styles.buttonDisabled]}
@@ -202,6 +229,67 @@ const styles = StyleSheet.create({
   },
   inputLast: {
     marginBottom: 0,
+  },
+  dropdownTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dropdownPlaceholder: {
+    fontSize: 15,
+    color: 'rgba(165, 56, 96, 0.65)',
+    flex: 1,
+  },
+  dropdownValue: {
+    fontSize: 15,
+    color: '#FFFFFF',
+    flex: 1,
+  },
+  dropdownArrow: {
+    fontSize: 10,
+    color: '#EF88AD',
+    marginLeft: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  dropdown: {
+    backgroundColor: 'rgba(8, 0, 5, 0.95)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 136, 173, 0.55)',
+    overflow: 'hidden',
+  },
+  dropdownOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  dropdownOptionBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(58, 5, 25, 0.9)',
+  },
+  dropdownOptionActive: {
+    backgroundColor: 'rgba(239, 136, 173, 0.09)',
+  },
+  dropdownOptionText: {
+    fontSize: 14,
+    color: 'rgba(196, 119, 142, 0.75)',
+    fontWeight: '500',
+  },
+  dropdownOptionTextActive: {
+    color: '#EF88AD',
+    fontWeight: '700',
+  },
+  dropdownCheck: {
+    fontSize: 14,
+    color: '#EF88AD',
+    fontWeight: '700',
   },
   button: {
     backgroundColor: 'rgba(239, 136, 173, 0.1)',
