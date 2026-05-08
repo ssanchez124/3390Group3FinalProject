@@ -32,17 +32,30 @@ function Stat({ label, value }) {
 function ExerciseCard({
   exercise, isExpanded, onToggle,
   onSwap, swapping, onRemove,
+  onFavorite, favoriting, // <-- Added new props here
   sets, onUpdateSet, onAddSet,
 }) {
   return (
     <View style={styles.card}>
       <View style={styles.cardSheen} />
 
-      {/* Name + Swap + Remove */}
+      {/* Name + Favorite + Swap + Remove */}
       <View style={styles.cardTop}>
         <TouchableOpacity style={{ flex: 1 }} onPress={onToggle} activeOpacity={0.7}>
           <Text style={styles.exerciseName}>{exercise.name}</Text>
           <Text style={styles.muscleGroup}>{exercise.muscleGroup}</Text>
+        </TouchableOpacity>
+
+        {/* NEW FAVORITE BUTTON */}
+        <TouchableOpacity
+          style={[styles.iconButton, styles.favBtn, favoriting && styles.iconButtonDisabled]}
+          onPress={onFavorite}
+          disabled={favoriting}
+        >
+          {favoriting
+            ? <ActivityIndicator size="small" color="#F4B41A" />
+            : <Text style={styles.favText}>★ Fav</Text>
+          }
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -153,6 +166,7 @@ export default function WorkoutDisplay() {
   const [expandedIds, setExpandedIds] = useState({})
   const [logs, setLogs] = useState(() => initLogs(plan.exercises))
   const [swappingId, setSwappingId] = useState(null)
+  const [favoritingId, setFavoritingId] = useState(null) // <-- New loading state
   const [saving, setSaving] = useState(false)
 
   const toggleExpand = (id) =>
@@ -180,6 +194,45 @@ export default function WorkoutDisplay() {
         { set: prev[exerciseId].length + 1, reps: '', weight_kg: '', weight_type: 'custom', },
       ],
     }))
+  }
+
+  // NEW: Handler to favorite an exercise
+  const handleFavorite = async (exercise) => {
+    setFavoritingId(exercise.id)
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) throw new Error('User not authenticated')
+
+      // Update the column name 'exercise_id' below if your table uses something else 
+      // like 'table_id' or 'workout_id'
+      const { error } = await supabase
+      .from('user_favorites')
+      .insert({
+        user_id: user.id,
+        exercise_name: exercise.name,        // Maps 'name' to 'exercise_name'
+        muscle_group: exercise.muscleGroup, // Maps 'muscleGroup' to 'muscle_group'
+        instructions: exercise.instructions,
+        sets: exercise.sets,
+        reps: exercise.reps.toString(),     // Ensuring it's a string
+        rest_seconds: exercise.restSeconds,
+        difficulty: exercise.difficulty,
+      })
+
+      if (error) throw error
+
+      // Optional: Give user feedback that it worked
+      Alert.alert('Favorited!', `${exercise.name} added to your favorites.`)
+
+    } catch (err) {
+      // Catch duplicate key errors gracefully if they already favorited it
+      if (err.code === '23505') { 
+        Alert.alert('Already Favorited', `You have already saved ${exercise.name}.`)
+      } else {
+        Alert.alert('Failed to favorite', err.message)
+      }
+    } finally {
+      setFavoritingId(null)
+    }
   }
 
   const handleSwap = async (exercise) => {
@@ -304,6 +357,8 @@ export default function WorkoutDisplay() {
             onToggle={() => toggleExpand(item.id)}
             onSwap={() => handleSwap(item)}
             swapping={swappingId === item.id}
+            onFavorite={() => handleFavorite(item)}     // <-- Pass handler
+            favoriting={favoritingId === item.id}       // <-- Pass state
             onRemove={() => removeExercise(item.id)}
             sets={logs[item.id] ?? []}
             onUpdateSet={(i, field, val) => updateSet(item.id, i, field, val)}
@@ -379,6 +434,13 @@ const styles = StyleSheet.create({
     borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
     marginLeft: 6, alignItems: 'center', justifyContent: 'center',
   },
+  // NEW: Favorite button styles
+  favBtn: {
+    borderWidth: 1, borderColor: 'rgba(244, 180, 26, 0.55)',
+    backgroundColor: 'rgba(244, 180, 26, 0.08)',
+  },
+  favText: { color: '#F4B41A', fontWeight: '700', fontSize: 12 },
+
   swapBtn: {
     borderWidth: 1, borderColor: 'rgba(239,136,173,0.55)',
     backgroundColor: 'rgba(239,136,173,0.08)',
