@@ -9,13 +9,13 @@ import {
   Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { supabase } from '../../lib/supabase'; // Adjust path based on your folder structure
+import { supabase } from '../../lib/supabase';
 
 const Favorites = () => {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [isRefetching, setIsRefetching] = useState(false); // Added for the button-specific loading state
+  const [isRefetching, setIsRefetching] = useState(false);
 
   useEffect(() => {
     fetchFavorites();
@@ -23,7 +23,6 @@ const Favorites = () => {
 
   const fetchFavorites = async (manual = false) => {
     try {
-      // If manual is true, we show the small spinner in the button instead of the full screen one
       if (manual) {
         setIsRefetching(true);
       } else {
@@ -47,7 +46,7 @@ const Favorites = () => {
     } finally {
       setLoading(false);
       setRefreshing(false);
-      setIsRefetching(false); // Reset the button spinner
+      setIsRefetching(false);
     }
   };
 
@@ -124,7 +123,6 @@ const Favorites = () => {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Favorite Exercises</Text>
         
-        {/* Added Refresh Button */}
         <TouchableOpacity 
           style={styles.refreshBtn} 
           onPress={() => fetchFavorites(true)} 
@@ -164,7 +162,7 @@ const styles = StyleSheet.create({
   centered: { flex: 1, backgroundColor: '#080005', justifyContent: 'center', alignItems: 'center' },
   
   header: {
-    flexDirection: 'row', // Align title and button horizontally
+    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
@@ -178,7 +176,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     letterSpacing: -0.5,
   },
-  refreshBtn: { // Styling for the new button
+  refreshBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,

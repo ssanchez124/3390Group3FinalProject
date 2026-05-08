@@ -32,7 +32,7 @@ function Stat({ label, value }) {
 function ExerciseCard({
   exercise, isExpanded, onToggle,
   onSwap, swapping, onRemove,
-  onFavorite, favoriting, // <-- Added new props here
+  onFavorite, favoriting,
   sets, onUpdateSet, onAddSet,
 }) {
   return (
@@ -166,7 +166,7 @@ export default function WorkoutDisplay() {
   const [expandedIds, setExpandedIds] = useState({})
   const [logs, setLogs] = useState(() => initLogs(plan.exercises))
   const [swappingId, setSwappingId] = useState(null)
-  const [favoritingId, setFavoritingId] = useState(null) // <-- New loading state
+  const [favoritingId, setFavoritingId] = useState(null)
   const [saving, setSaving] = useState(false)
 
   const toggleExpand = (id) =>
@@ -196,24 +196,21 @@ export default function WorkoutDisplay() {
     }))
   }
 
-  // NEW: Handler to favorite an exercise
   const handleFavorite = async (exercise) => {
     setFavoritingId(exercise.id)
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       if (authError || !user) throw new Error('User not authenticated')
 
-      // Update the column name 'exercise_id' below if your table uses something else 
-      // like 'table_id' or 'workout_id'
       const { error } = await supabase
       .from('user_favorites')
       .insert({
         user_id: user.id,
-        exercise_name: exercise.name,        // Maps 'name' to 'exercise_name'
-        muscle_group: exercise.muscleGroup, // Maps 'muscleGroup' to 'muscle_group'
+        exercise_name: exercise.name,
+        muscle_group: exercise.muscleGroup,
         instructions: exercise.instructions,
         sets: exercise.sets,
-        reps: exercise.reps.toString(),     // Ensuring it's a string
+        reps: exercise.reps.toString(),
         rest_seconds: exercise.restSeconds,
         difficulty: exercise.difficulty,
       })
@@ -357,8 +354,8 @@ export default function WorkoutDisplay() {
             onToggle={() => toggleExpand(item.id)}
             onSwap={() => handleSwap(item)}
             swapping={swappingId === item.id}
-            onFavorite={() => handleFavorite(item)}     // <-- Pass handler
-            favoriting={favoritingId === item.id}       // <-- Pass state
+            onFavorite={() => handleFavorite(item)}
+            favoriting={favoritingId === item.id}
             onRemove={() => removeExercise(item.id)}
             sets={logs[item.id] ?? []}
             onUpdateSet={(i, field, val) => updateSet(item.id, i, field, val)}
@@ -434,7 +431,6 @@ const styles = StyleSheet.create({
     borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
     marginLeft: 6, alignItems: 'center', justifyContent: 'center',
   },
-  // NEW: Favorite button styles
   favBtn: {
     borderWidth: 1, borderColor: 'rgba(244, 180, 26, 0.55)',
     backgroundColor: 'rgba(244, 180, 26, 0.08)',
