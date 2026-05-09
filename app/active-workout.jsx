@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  StyleSheet, Alert, ActivityIndicator, SafeAreaView,
+  StyleSheet, Alert, ActivityIndicator,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { supabase } from '../lib/supabase'
 import { getWorkoutPlan } from '../lib/workoutStore'
@@ -29,7 +30,7 @@ function SetRow({ setNum, reps, weightKg, onChangeReps, onChangeWeight }) {
       <TextInput
         style={styles.setInput}
         placeholder="kg"
-        placeholderTextColor="#aaa"
+        placeholderTextColor="rgba(239, 136, 173, 0.35)"
         value={weightKg}
         onChangeText={onChangeWeight}
         keyboardType="decimal-pad"
@@ -37,7 +38,7 @@ function SetRow({ setNum, reps, weightKg, onChangeReps, onChangeWeight }) {
       <TextInput
         style={styles.setInput}
         placeholder="reps"
-        placeholderTextColor="#aaa"
+        placeholderTextColor="rgba(239, 136, 173, 0.35)"
         value={reps}
         onChangeText={onChangeReps}
         keyboardType="numeric"
@@ -63,6 +64,7 @@ function ExerciseLogger({ log, onChange }) {
 
   return (
     <View style={styles.card}>
+      <View style={styles.cardSheen} />
       <Text style={styles.exerciseName}>{log.exercise_name}</Text>
       <Text style={styles.muscleGroup}>{log.muscle_group}</Text>
 
@@ -148,16 +150,16 @@ export default function ActiveWorkout() {
   return (
     <SafeAreaView style={styles.wrapper}>
       <View style={styles.header}>
+        <View style={styles.headerSheen} />
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Log Your Sets</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <Text style={styles.subtitle}>
-          Fill in the weight and reps you actually completed for each set.
-          Leave a set blank to skip it.
+          Fill in the weight and reps you actually completed for each set. Leave a set blank to skip it.
         </Text>
 
         {logs.map((log, i) => (
@@ -174,7 +176,7 @@ export default function ActiveWorkout() {
           disabled={saving}
         >
           {saving
-            ? <ActivityIndicator color="#fff" />
+            ? <ActivityIndicator color="#EF88AD" />
             : <Text style={styles.completeButtonText}>Complete Workout</Text>
           }
         </TouchableOpacity>
@@ -186,61 +188,85 @@ export default function ActiveWorkout() {
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
-    backgroundColor: '#ADD8E6',
+    backgroundColor: '#080005',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 12,
+    paddingBottom: 14,
+    backgroundColor: 'rgba(58, 5, 25, 0.6)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(165, 56, 96, 0.3)',
+    overflow: 'hidden',
+  },
+  headerSheen: {
+    position: 'absolute',
+    top: 0,
+    left: 16,
+    right: 16,
+    height: 1,
+    backgroundColor: 'rgba(239, 136, 173, 0.2)',
   },
   backButton: {
     marginRight: 14,
+    paddingVertical: 4,
   },
   backText: {
     fontSize: 15,
-    color: '#2e7d32',
+    color: '#EF88AD',
     fontWeight: '600',
   },
   title: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1a1a2e',
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.3,
   },
   container: {
     paddingHorizontal: 16,
+    paddingTop: 16,
     paddingBottom: 48,
   },
   subtitle: {
     fontSize: 13,
-    color: '#555',
+    color: 'rgba(165, 56, 96, 0.85)',
     marginBottom: 16,
-    lineHeight: 18,
+    lineHeight: 19,
   },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
+    backgroundColor: 'rgba(58, 5, 25, 0.55)',
+    borderRadius: 20,
     padding: 16,
     marginBottom: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
+    borderWidth: 1,
+    borderColor: 'rgba(165, 56, 96, 0.3)',
+    overflow: 'hidden',
+  },
+  cardSheen: {
+    position: 'absolute',
+    top: 0,
+    left: 16,
+    right: 16,
+    height: 1,
+    backgroundColor: 'rgba(239, 136, 173, 0.28)',
+    borderRadius: 1,
   },
   exerciseName: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1a1a2e',
+    color: '#FFFFFF',
+    letterSpacing: -0.2,
     marginBottom: 2,
   },
   muscleGroup: {
     fontSize: 12,
-    color: '#4CAF50',
+    color: '#EF88AD',
     fontWeight: '600',
     textTransform: 'capitalize',
     marginBottom: 12,
+    letterSpacing: 0.3,
   },
   setHeader: {
     flexDirection: 'row',
@@ -250,10 +276,11 @@ const styles = StyleSheet.create({
   },
   setHeaderLabel: {
     fontSize: 11,
-    color: '#888',
+    color: 'rgba(165, 56, 96, 0.7)',
     fontWeight: '600',
     width: 80,
     textAlign: 'center',
+    letterSpacing: 0.5,
   },
   setRow: {
     flexDirection: 'row',
@@ -263,20 +290,22 @@ const styles = StyleSheet.create({
   },
   setLabel: {
     fontSize: 13,
-    color: '#555',
-    fontWeight: '600',
+    color: '#EF88AD',
+    fontWeight: '700',
     width: 40,
   },
   setInput: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
+    backgroundColor: 'rgba(8, 0, 5, 0.6)',
+    borderWidth: 1,
+    borderColor: 'rgba(165, 56, 96, 0.35)',
+    borderRadius: 10,
     paddingVertical: 8,
     paddingHorizontal: 10,
     fontSize: 14,
     textAlign: 'center',
     marginHorizontal: 4,
-    color: '#1a1a2e',
+    color: '#FFFFFF',
   },
   addSetButton: {
     marginTop: 8,
@@ -284,28 +313,33 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   addSetText: {
-    color: '#4CAF50',
+    color: '#EF88AD',
     fontWeight: '700',
     fontSize: 13,
   },
   completeButton: {
-    backgroundColor: '#4CAF50',
-    borderRadius: 12,
-    paddingVertical: 16,
+    backgroundColor: 'rgba(239, 136, 173, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 136, 173, 0.55)',
+    borderRadius: 16,
+    paddingVertical: 18,
     alignItems: 'center',
     marginTop: 16,
-    elevation: 4,
-    shadowColor: '#4CAF50',
+    shadowColor: '#EF88AD',
     shadowOpacity: 0.3,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 6,
   },
   completeButtonDisabled: {
-    backgroundColor: '#81C784',
+    backgroundColor: 'rgba(103, 13, 47, 0.15)',
+    shadowOpacity: 0,
+    borderColor: 'rgba(165, 56, 96, 0.25)',
   },
   completeButtonText: {
-    color: '#fff',
+    color: '#EF88AD',
     fontSize: 16,
     fontWeight: '700',
+    letterSpacing: 1,
   },
 })

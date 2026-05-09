@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react'
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, ActivityIndicator, SafeAreaView,
+  StyleSheet, ActivityIndicator,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect } from 'expo-router'
 import { supabase } from '../../lib/supabase'
 
@@ -45,6 +46,7 @@ function SessionCard({ session }) {
 
   return (
     <View style={styles.card}>
+      <View style={styles.cardSheen} />
       <TouchableOpacity style={styles.cardHeader} onPress={() => setExpanded(e => !e)}>
         <View style={{ flex: 1 }}>
           <Text style={styles.sessionDate}>{formatDate(session.completed_at)}</Text>
@@ -100,14 +102,23 @@ export default function History() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#4CAF50" />
+        <ActivityIndicator size="large" color="#EF88AD" />
       </View>
     )
   }
 
   return (
     <SafeAreaView style={styles.wrapper}>
-      <Text style={styles.title}>Workout History</Text>
+      <View style={styles.header}>
+        <View style={styles.headerSheen} />
+        <View style={styles.badgeRow}>
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>YOUR PROGRESS</Text>
+          </View>
+        </View>
+        <Text style={styles.title}>Workout History</Text>
+      </View>
+
       {sessions.length === 0 ? (
         <View style={styles.centered}>
           <Text style={styles.empty}>No workouts logged yet.</Text>
@@ -118,6 +129,7 @@ export default function History() {
           data={sessions}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
           renderItem={({ item }) => <SessionCard session={item} />}
         />
       )}
@@ -128,45 +140,86 @@ export default function History() {
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
-    backgroundColor: '#ADD8E6',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1a1a2e',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 12,
-  },
-  list: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    backgroundColor: '#080005',
   },
   centered: {
     flex: 1,
+    backgroundColor: '#080005',
     alignItems: 'center',
     justifyContent: 'center',
   },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
+    backgroundColor: 'rgba(58, 5, 25, 0.6)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(165, 56, 96, 0.3)',
+    overflow: 'hidden',
+  },
+  headerSheen: {
+    position: 'absolute',
+    top: 0,
+    left: 16,
+    right: 16,
+    height: 1,
+    backgroundColor: 'rgba(239, 136, 173, 0.2)',
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  badge: {
+    backgroundColor: 'rgba(239, 136, 173, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 136, 173, 0.28)',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#EF88AD',
+    letterSpacing: 3,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+  },
+  list: {
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 40,
+  },
   empty: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#444',
-    marginBottom: 6,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 8,
   },
   emptySub: {
     fontSize: 13,
-    color: '#888',
+    color: 'rgba(165, 56, 96, 0.7)',
   },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
+    backgroundColor: 'rgba(58, 5, 25, 0.55)',
+    borderRadius: 20,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(165, 56, 96, 0.3)',
     overflow: 'hidden',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
+  },
+  cardSheen: {
+    position: 'absolute',
+    top: 0,
+    left: 16,
+    right: 16,
+    height: 1,
+    backgroundColor: 'rgba(239, 136, 173, 0.28)',
+    borderRadius: 1,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -176,28 +229,28 @@ const styles = StyleSheet.create({
   sessionDate: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1a1a2e',
+    color: '#FFFFFF',
     marginBottom: 3,
   },
   sessionMeta: {
     fontSize: 13,
-    color: '#555',
+    color: 'rgba(165, 56, 96, 0.85)',
     marginBottom: 2,
   },
   muscles: {
     fontSize: 12,
-    color: '#4CAF50',
+    color: '#EF88AD',
     fontWeight: '600',
     textTransform: 'capitalize',
   },
   chevron: {
     fontSize: 12,
-    color: '#888',
+    color: '#EF88AD',
     marginLeft: 8,
   },
   exerciseList: {
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: 'rgba(165, 56, 96, 0.2)',
     paddingHorizontal: 16,
     paddingBottom: 12,
   },
@@ -208,24 +261,24 @@ const styles = StyleSheet.create({
   exerciseName: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#1a1a2e',
+    color: '#FFFFFF',
   },
   muscleGroup: {
     fontSize: 12,
-    color: '#4CAF50',
+    color: '#EF88AD',
     fontWeight: '600',
     textTransform: 'capitalize',
     marginBottom: 4,
   },
   setRow: {
     fontSize: 13,
-    color: '#555',
+    color: 'rgba(165, 56, 96, 0.85)',
     marginBottom: 2,
     paddingLeft: 8,
   },
   noData: {
     fontSize: 12,
-    color: '#aaa',
+    color: 'rgba(165, 56, 96, 0.5)',
     fontStyle: 'italic',
     paddingLeft: 8,
     marginTop: 2,
