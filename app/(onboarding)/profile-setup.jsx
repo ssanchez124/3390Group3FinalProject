@@ -63,7 +63,7 @@ export default function ProfileSetup() {
       gender: gender.toLowerCase().replace(/ /g, '_'),
       weight_kg: parseFloat(weightKg),
       height_cm: parseFloat(heightCm),
-    })
+    }, { onConflict: 'user_id' })
     setLoading(false)
     if (error) {
       Alert.alert('Error', error.message)
