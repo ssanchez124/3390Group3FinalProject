@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { label: 'Home', route: '/(tabs)/home', segment: 'home' },
   { label: 'Workout', route: '/(tabs)/workout-config', segment: 'workout-config' },
   { label: 'History', route: '/(tabs)/history', segment: 'history' },
+  { label: 'Analytics', route: '/(tabs)/analytics', segment: 'analytics' },
 ]
 
 export default function HamburgerMenu({ title }) {

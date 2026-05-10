@@ -5,7 +5,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect } from 'expo-router'
-import { LineChart, BarChart } from 'react-native-chart-kit'
+import { LineChart } from 'react-native-chart-kit'
 import { supabase } from '../../lib/supabase'
 
 const SCREEN_WIDTH = Dimensions.get('window').width
@@ -30,20 +30,27 @@ function processExerciseProgress(logs) {
   return map
 }
 
-function processMuscleGroupBest(logs) {
-  // Returns { [muscleGroup]: { [exerciseName]: maxWeightEver } }
-  const map = {}
+function processMuscleGroupVolume(logs) {
+  // Returns { [muscleGroup]: [{ date, volume }] } where volume = Σ(weight × reps) per session
+  const map = {} // { group: { date: volume } } — date order preserved via insertion (logs ordered asc)
   logs.forEach(log => {
     const group = log.muscle_group || 'Other'
-    const weights = (log.sets_data || []).map(s => parseFloat(s.weight_kg) || 0).filter(w => w > 0)
-    if (weights.length === 0) return
-    const max = Math.max(...weights)
+    const date = new Date(log.workout_sessions.completed_at)
+      .toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    const volume = (log.sets_data || []).reduce((sum, s) => {
+      const w = parseFloat(s.weight_kg) || 0
+      const r = parseInt(s.reps) || 0
+      return sum + w * r
+    }, 0)
+    if (volume === 0) return
     if (!map[group]) map[group] = {}
-    if (!map[group][log.exercise_name] || map[group][log.exercise_name] < max) {
-      map[group][log.exercise_name] = max
-    }
+    map[group][date] = (map[group][date] || 0) + volume
   })
-  return map
+  const result = {}
+  Object.entries(map).forEach(([group, dateMap]) => {
+    result[group] = Object.entries(dateMap).map(([date, volume]) => ({ date, volume: Math.round(volume) }))
+  })
+  return result
 }
 
 function computeInsights(progressMap, totalSessions) {
@@ -66,9 +73,9 @@ function computeInsights(progressMap, totalSessions) {
     }
   })
 
-  if (strongest.name) insights.push(`💪 Strongest lift: ${strongest.name} at ${strongest.weight} kg`)
+  if (strongest.name) insights.push(`Strongest lift: ${strongest.name} at ${strongest.weight} kg`)
   if (mostImproved.name && mostImproved.pct > 0) insights.push(`📈 Most improved: ${mostImproved.name} (+${mostImproved.pct}%)`)
-  if (totalSessions > 0) insights.push(`🏅 Total workouts logged: ${totalSessions}`)
+  if (totalSessions > 0) insights.push(`Total workouts logged: ${totalSessions}`)
   if (insights.length === 0) insights.push('Log some weighted sets to see insights here.')
   return insights
 }
@@ -191,22 +198,38 @@ function MuscleGroupChart({ muscleGroupMap }) {
   if (groups.length === 0) {
     return (
       <View style={styles.card}>
-        <SectionTitle>Best by Muscle Group</SectionTitle>
+        <SectionTitle>Volume by Muscle Group</SectionTitle>
         <Text style={styles.emptyText}>No data yet.</Text>
       </View>
     )
   }
 
-  const exercises = muscleGroupMap[selected] || {}
-  const labels = Object.keys(exercises)
-  const data = Object.values(exercises)
-  const hasChart = labels.length > 0
+  const points = muscleGroupMap[selected] || []
+  const hasChart = points.length >= 2
+
+  let insight = null
+  if (points.length >= 2) {
+    const first = points[0].volume
+    const last = points[points.length - 1].volume
+    const diff = last - first
+    const pct = first > 0 ? Math.round((diff / first) * 100) : 0
+    if (diff > 0) insight = `📈 Volume up ${pct}% since your first session`
+    else if (diff < 0) insight = `📉 Volume down ${Math.abs(pct)}% — consider adding more sets`
+    else insight = `➡ Consistent volume across sessions`
+  } else if (points.length === 1) {
+    insight = `First session recorded — keep training to track volume trends!`
+  }
+
+  const chartData = {
+    labels: points.map(p => p.date),
+    datasets: [{ data: points.map(p => p.volume) }],
+  }
 
   return (
     <View style={styles.card}>
-      <SectionTitle>Best by Muscle Group</SectionTitle>
+      <SectionTitle>Volume by Muscle Group</SectionTitle>
+      <Text style={styles.volumeSubtitle}>Total kg × reps per session</Text>
 
-      {/* Group pills */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pillRow}>
         {groups.map(g => (
           <TouchableOpacity
@@ -214,31 +237,27 @@ function MuscleGroupChart({ muscleGroupMap }) {
             style={[styles.pill, selected === g && styles.pillActive]}
             onPress={() => setSelected(g)}
           >
-            <Text style={[styles.pillText, selected === g && styles.pillTextActive]}>
-              {g}
-            </Text>
+            <Text style={[styles.pillText, selected === g && styles.pillTextActive]}>{g}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
       {hasChart ? (
-        <BarChart
-          data={{
-            labels: labels.map(l => l.length > 8 ? l.slice(0, 8) + '…' : l),
-            datasets: [{ data }],
-          }}
+        <LineChart
+          data={chartData}
           width={CHART_WIDTH - 32}
-          height={200}
+          height={180}
           chartConfig={chartConfig}
+          bezier
           style={styles.chart}
-          showValuesOnTopOfBars
-          withInnerLines={false}
-          yAxisSuffix=" kg"
-          fromZero
+          withInnerLines
+          withOuterLines={false}
         />
       ) : (
-        <Text style={styles.emptyText}>No weighted exercises logged for this group.</Text>
+        <Text style={styles.emptyText}>Train this muscle group in at least 2 sessions to see a trend.</Text>
       )}
+
+      {insight && <Text style={styles.insightText}>{insight}</Text>}
     </View>
   )
 }
@@ -292,7 +311,7 @@ export default function Analytics() {
 
         if (!error && logs) {
           const progress = processExerciseProgress(logs)
-          const muscleGroup = processMuscleGroupBest(logs)
+          const muscleGroup = processMuscleGroupVolume(logs)
           const ins = computeInsights(progress, count ?? 0)
           setProgressMap(progress)
           setMuscleGroupMap(muscleGroup)
@@ -393,5 +412,9 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 13, color: 'rgba(165,56,96,0.7)',
     fontStyle: 'italic', textAlign: 'center', marginTop: 12,
+  },
+  volumeSubtitle: {
+    fontSize: 11, color: 'rgba(165,56,96,0.6)',
+    marginBottom: 10, marginTop: -8,
   },
 })
