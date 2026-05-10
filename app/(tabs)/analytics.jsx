@@ -80,7 +80,86 @@ function computeInsights(progressMap, totalSessions) {
   return insights
 }
 
+function computeStreaks(sessionDates) {
+  if (sessionDates.length === 0) return { currentStreak: 0, longestStreak: 0, activeDays: new Set() }
+
+  const daySet = new Set(sessionDates.map(d => d.toISOString().split('T')[0]))
+  const days = [...daySet].sort()
+
+  // Longest streak
+  let longest = 1, run = 1
+  for (let i = 1; i < days.length; i++) {
+    const gap = (new Date(days[i]) - new Date(days[i - 1])) / 86400000
+    if (gap === 1) { run++; if (run > longest) longest = run }
+    else run = 1
+  }
+
+  // Current streak — count if today OR yesterday has a workout (gives grace for logging later)
+  const todayStr = new Date().toISOString().split('T')[0]
+  const yestStr = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+  let current = 0
+  if (daySet.has(todayStr) || daySet.has(yestStr)) {
+    let check = new Date(daySet.has(todayStr) ? todayStr : yestStr)
+    while (daySet.has(check.toISOString().split('T')[0])) {
+      current++
+      check = new Date(check.getTime() - 86400000)
+    }
+  }
+
+  return { currentStreak: current, longestStreak: longest, activeDays: daySet }
+}
+
 // ─── Sub-components ────────────────────────────────────────────────────────
+
+function StreakCard({ currentStreak, longestStreak, activeDays }) {
+  const last14 = Array.from({ length: 14 }, (_, i) => {
+    const d = new Date(Date.now() - (13 - i) * 86400000)
+    return {
+      key: d.toISOString().split('T')[0],
+      label: d.toLocaleDateString('en-US', { weekday: 'narrow' }),
+    }
+  })
+
+  const motivation =
+    currentStreak === 0 ? 'Start your streak today!'
+    : currentStreak < 3 ? 'Great start — keep it up!'
+    : currentStreak < 7 ? 'Building momentum! 💪'
+    : currentStreak < 14 ? "You're on fire! 🔥"
+    : currentStreak < 30 ? 'Unstoppable — keep going!'
+    : 'Legendary dedication! 🏆'
+
+  return (
+    <View style={styles.card}>
+      <SectionTitle>Workout Streak</SectionTitle>
+
+      <View style={styles.streakRow}>
+        <View style={styles.streakBlock}>
+          <Text style={styles.streakEmoji}>🔥</Text>
+          <Text style={styles.streakNumber}>{currentStreak}</Text>
+          <Text style={styles.streakLabel}>current{'\n'}streak</Text>
+        </View>
+        <View style={styles.streakDivider} />
+        <View style={styles.streakBlock}>
+          <Text style={styles.streakEmoji}>🏆</Text>
+          <Text style={styles.streakNumber}>{longestStreak}</Text>
+          <Text style={styles.streakLabel}>best{'\n'}streak</Text>
+        </View>
+      </View>
+
+      <Text style={styles.streakMotivation}>{motivation}</Text>
+
+      <Text style={styles.dotGridLabel}>Last 14 days</Text>
+      <View style={styles.dotRow}>
+        {last14.map(({ key, label }) => (
+          <View key={key} style={styles.dotCol}>
+            <View style={[styles.dot, activeDays.has(key) && styles.dotActive]} />
+            <Text style={styles.dotLabel}>{label}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  )
+}
 
 const chartConfig = {
   backgroundGradientFrom: 'rgba(58,5,25,0.8)',
@@ -284,6 +363,7 @@ export default function Analytics() {
   const [muscleGroupMap, setMuscleGroupMap] = useState({})
   const [insights, setInsights] = useState([])
   const [totalSessions, setTotalSessions] = useState(0)
+  const [streakData, setStreakData] = useState({ currentStreak: 0, longestStreak: 0, activeDays: new Set() })
 
   useFocusEffect(
     useCallback(() => {
@@ -291,32 +371,31 @@ export default function Analytics() {
         setLoading(true)
         const { data: { user } } = await supabase.auth.getUser()
 
-        // Fetch all exercise logs with their session dates
-        const { data: logs, error } = await supabase
-          .from('exercise_logs')
-          .select(`
-            exercise_name,
-            muscle_group,
-            sets_data,
-            workout_sessions ( completed_at )
-          `)
-          .eq('user_id', user.id)
-          .order('logged_at', { ascending: true })
+        const [logsResult, sessionsResult] = await Promise.all([
+          supabase
+            .from('exercise_logs')
+            .select(`exercise_name, muscle_group, sets_data, workout_sessions ( completed_at )`)
+            .eq('user_id', user.id)
+            .order('logged_at', { ascending: true }),
+          supabase
+            .from('workout_sessions')
+            .select('completed_at', { count: 'exact' })
+            .eq('user_id', user.id),
+        ])
 
-        // Count total sessions
-        const { count } = await supabase
-          .from('workout_sessions')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id)
+        const { data: logs, error } = logsResult
+        const { data: sessions, count } = sessionsResult
 
         if (!error && logs) {
           const progress = processExerciseProgress(logs)
           const muscleGroup = processMuscleGroupVolume(logs)
           const ins = computeInsights(progress, count ?? 0)
+          const streak = computeStreaks((sessions || []).map(s => new Date(s.completed_at)))
           setProgressMap(progress)
           setMuscleGroupMap(muscleGroup)
           setInsights(ins)
           setTotalSessions(count ?? 0)
+          setStreakData(streak)
         }
         setLoading(false)
       }
@@ -341,6 +420,7 @@ export default function Analytics() {
         <Text style={styles.pageTitle}>Analytics</Text>
         <Text style={styles.pageSubtitle}>Track your strength over time</Text>
 
+        <StreakCard {...streakData} />
         <InsightsCard insights={insights} />
         <ExerciseProgressChart progressMap={progressMap} />
         <MuscleGroupChart muscleGroupMap={muscleGroupMap} />
@@ -417,4 +497,24 @@ const styles = StyleSheet.create({
     fontSize: 11, color: 'rgba(165,56,96,0.6)',
     marginBottom: 10, marginTop: -8,
   },
+
+  streakRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 8 },
+  streakBlock: { flex: 1, alignItems: 'center' },
+  streakDivider: { width: 1, height: 64, backgroundColor: 'rgba(165,56,96,0.3)', marginHorizontal: 16 },
+  streakEmoji: { fontSize: 30, marginBottom: 4 },
+  streakNumber: { fontSize: 44, fontWeight: '800', color: '#EF88AD', lineHeight: 48 },
+  streakLabel: { fontSize: 11, color: 'rgba(165,56,96,0.7)', textAlign: 'center', marginTop: 4, lineHeight: 16 },
+  streakMotivation: { fontSize: 13, color: '#EF88AD', fontWeight: '600', textAlign: 'center', marginTop: 12, marginBottom: 16 },
+
+  dotGridLabel: { fontSize: 11, color: 'rgba(165,56,96,0.6)', marginBottom: 8 },
+  dotRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  dotCol: { alignItems: 'center', flex: 1 },
+  dot: {
+    width: 14, height: 14, borderRadius: 7,
+    backgroundColor: 'rgba(165,56,96,0.15)',
+    borderWidth: 1, borderColor: 'rgba(165,56,96,0.25)',
+    marginBottom: 4,
+  },
+  dotActive: { backgroundColor: '#EF88AD', borderColor: '#EF88AD' },
+  dotLabel: { fontSize: 8, color: 'rgba(165,56,96,0.5)' },
 })
