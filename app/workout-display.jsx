@@ -247,10 +247,11 @@ export default function WorkoutDisplay() {
           },
         },
       })
-      if (error) throw new Error(error.message)
+if (error) throw new Error(error.message)
       if (data?.error) throw new Error(data.error)
 
-      const newExercise = { ...data, id: exercise.id }
+      const swapped = data.exercises?.[0] ?? data
+      const newExercise = { ...swapped, id: exercise.id }
       setExercises(prev => prev.map(e => e.id === exercise.id ? newExercise : e))
       setLogs(prev => ({ ...prev, [exercise.id]: initSets(newExercise.sets) }))
     } catch (err) {
