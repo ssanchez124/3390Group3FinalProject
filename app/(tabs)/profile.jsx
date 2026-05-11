@@ -96,7 +96,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.wrapper}>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 
         <View style={styles.header}>
           <View style={styles.badgeRow}>
@@ -223,8 +223,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  scrollView: {
+    width: '100%',
+  },
   container: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 8,
     paddingTop: 64,
     paddingBottom: 52,
     width: '100%',
@@ -266,7 +269,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: 'rgba(58, 5, 25, 0.55)',
     borderRadius: 20,
-    padding: 18,
+    padding: 22,
     marginBottom: 14,
     borderWidth: 1,
     borderColor: 'rgba(165, 56, 96, 0.3)',
@@ -284,17 +287,17 @@ const styles = StyleSheet.create({
   labelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   labelAccent: {
     width: 3,
-    height: 14,
+    height: 16,
     borderRadius: 2,
     backgroundColor: '#EF88AD',
     marginRight: 10,
   },
   label: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#FFFFFF',
     letterSpacing: 0.3,
@@ -302,10 +305,10 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: 'rgba(8, 0, 5, 0.55)',
     color: '#FFFFFF',
-    paddingHorizontal: 14,
-    paddingVertical: 13,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
     borderRadius: 12,
-    fontSize: 15,
+    fontSize: 16,
     borderWidth: 1,
     borderColor: 'rgba(165, 56, 96, 0.45)',
   },
