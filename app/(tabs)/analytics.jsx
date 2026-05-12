@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import {
   View, Text, ScrollView, TouchableOpacity,
   StyleSheet, ActivityIndicator, Dimensions,
@@ -34,13 +34,15 @@ function processMuscleGroupVolume(logs) {
   // Returns { [muscleGroup]: [{ date, volume }] } where volume = Σ(weight × reps) per session
   const map = {} // { group: { date: volume } } — date order preserved via insertion (logs ordered asc)
   logs.forEach(log => {
-    const group = log.muscle_group || 'Other'
+    const group = log.muscle_group
+      ? log.muscle_group.charAt(0).toUpperCase() + log.muscle_group.slice(1).toLowerCase()
+      : 'Other'
     const date = new Date(log.workout_sessions.completed_at)
       .toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     const volume = (log.sets_data || []).reduce((sum, s) => {
       const w = parseFloat(s.weight_kg) || 0
       const r = parseInt(s.reps) || 0
-      return sum + w * r
+      return sum + (w > 0 ? w * r : r)
     }, 0)
     if (volume === 0) return
     if (!map[group]) map[group] = {}
@@ -274,6 +276,12 @@ function MuscleGroupChart({ muscleGroupMap }) {
   const groups = Object.keys(muscleGroupMap)
   const [selected, setSelected] = useState(groups[0] || null)
 
+  useEffect(() => {
+    if (groups.length > 0 && (!selected || !muscleGroupMap[selected])) {
+      setSelected(groups[0])
+    }
+  }, [muscleGroupMap])
+
   if (groups.length === 0) {
     return (
       <View style={styles.card}>
@@ -332,8 +340,14 @@ function MuscleGroupChart({ muscleGroupMap }) {
           withInnerLines
           withOuterLines={false}
         />
+      ) : points.length === 1 ? (
+        <View style={styles.singleSessionBox}>
+          <Text style={styles.singleSessionVolume}>{points[0].volume}</Text>
+          <Text style={styles.singleSessionLabel}>volume units logged{'\n'}{points[0].date}</Text>
+          <Text style={styles.singleSessionHint}>Log {selected} again on a different day to see your trend line.</Text>
+        </View>
       ) : (
-        <Text style={styles.emptyText}>Train this muscle group in at least 2 sessions to see a trend.</Text>
+        <Text style={styles.emptyText}>No {selected} sessions logged yet.</Text>
       )}
 
       {insight && <Text style={styles.insightText}>{insight}</Text>}
@@ -362,7 +376,6 @@ export default function Analytics() {
   const [progressMap, setProgressMap] = useState({})
   const [muscleGroupMap, setMuscleGroupMap] = useState({})
   const [insights, setInsights] = useState([])
-  const [totalSessions, setTotalSessions] = useState(0)
   const [streakData, setStreakData] = useState({ currentStreak: 0, longestStreak: 0, activeDays: new Set() })
 
   useFocusEffect(
@@ -394,7 +407,6 @@ export default function Analytics() {
           setProgressMap(progress)
           setMuscleGroupMap(muscleGroup)
           setInsights(ins)
-          setTotalSessions(count ?? 0)
           setStreakData(streak)
         }
         setLoading(false)
@@ -488,6 +500,23 @@ const styles = StyleSheet.create({
   insightRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 },
   insightBullet: { color: '#EF88AD', fontWeight: '700', marginRight: 8, marginTop: 1 },
   insightRowText: { fontSize: 13, color: 'rgba(255,255,255,0.8)', flex: 1, lineHeight: 19 },
+
+  singleSessionBox: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(165,56,96,0.2)',
+    borderRadius: 12,
+    backgroundColor: 'rgba(8,0,5,0.3)',
+  },
+  singleSessionVolume: { fontSize: 40, fontWeight: '800', color: '#EF88AD', lineHeight: 44 },
+  singleSessionLabel: { fontSize: 12, color: 'rgba(165,56,96,0.7)', textAlign: 'center', marginTop: 4, lineHeight: 18 },
+  singleSessionHint: {
+    fontSize: 12, color: 'rgba(165,56,96,0.55)',
+    textAlign: 'center', marginTop: 12, lineHeight: 17,
+    paddingHorizontal: 16, fontStyle: 'italic',
+  },
 
   emptyText: {
     fontSize: 13, color: 'rgba(165,56,96,0.7)',
